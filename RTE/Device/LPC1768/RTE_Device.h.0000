@@ -1,0 +1,199 @@
+/* -----------------------------------------------------------------------------
+ * Copyright (C) 2013 ARM Limited. All rights reserved.
+ *  
+ * $Date:        27. June 2013
+ * $Revision:    V1.00
+ *  
+ * Project:      RTE Device Configuration for NXP LPC18xx
+ * -------------------------------------------------------------------------- */
+
+//-------- <<< Use Configuration Wizard in Context Menu >>> --------------------
+
+#ifndef __RTE_DEVICE_H
+#define __RTE_DEVICE_H
+
+
+// <e> USB0 Controller
+#define RTE_USB_USB0                  1
+
+//   <e> Pin Configuration
+#define RTE_USB_USB0_PIN              1
+//     <e> USB0_PPWR
+//     <i> VBUS drive signal (towards external charge pump or power management unit);
+//     <i> indicates that the VBUS signal must be driven (active HIGH).
+//     <i> PINx_y
+//       <o1> Pin  <0=>P1_7 <1=>P2_0 <2=>P2_3 <3=>P6_3
+//     </e>
+#define RTE_USB0_PPWR_PIN             1
+#define RTE_USB0_PPWR_PORT            3
+
+//     <e> USB0_PWR_FAULT
+//     <i> Port power fault signal indicating overcurrent condition;
+//     <i> this signal monitors over-current on the USB bus
+//        (external circuitry required to detect over-current condition).
+//     <i> PINx_y
+//       <o1> Pin  <0=>P1_5 <1=>P2_1 <2=>P2_4 <3=>P6_6 <4=>P8_0
+//     </e>
+#define RTE_USB0_PWR_FAULT_PIN        1
+#define RTE_USB0_PWR_FAULT_PORT       3
+
+//     <e> USB0_IND0
+//     <i> USB0 port indicator LED control output 0
+//     <i> PINx_y
+//       <o1> Pin  <0=>P1_4 <1=>P2_5 <2=>P2_6 <3=>P6_8 <4=>P8_2
+//     </e>
+#define RTE_USB0_IND0_PIN             1
+#define RTE_USB0_IND0_PORT            4
+
+//     <e> USB0_IND1
+//     <i> USB0 port indicator LED control output 1
+//     <i> PINx_y
+//       <o1> Pin  <0=>P1_3 <1=>P2_2 <2=>P6_7 <3=>P8_1
+//     </e>
+#define RTE_USB0_IND1_PIN             1
+#define RTE_USB0_IND1_PORT            3
+
+//   </e>
+
+//   <e> Device [Driver_USBD0]
+//   <i> Configuration settings for Driver_USBD0 in component ::Drivers:USB Device
+#define RTE_USB_USB0_DEV              1
+//   <o0.0> High-speed
+//     <i> Enable high-speed functionality
+#define RTE_USB_USB0_HS_ENABLE        0
+
+//     <h> Endpoints
+//     <i> Reduce memory requirements of Driver by disabling unused endpoints
+//       <e0.1> Endpoint 1
+//         <o1.1>  Bulk OUT
+//         <o1.17> Bulk IN
+//         <o2.1>  Interrupt OUT
+//         <o2.17> Interrupt IN
+//         <o3.1>  Isochronous OUT
+//         <o3.17> Isochronous IN
+//       </e>
+//       <e0.2> Endpoint 2
+//         <o1.2>  Bulk OUT
+//         <o1.18> Bulk IN
+//         <o2.2>  Interrupt OUT
+//         <o2.18> Interrupt IN
+//         <o3.2>  Isochronous OUT
+//         <o3.18> Isochronous IN
+//       </e>
+//       <e0.3> Endpoint 3
+//         <o1.3>  Bulk OUT
+//         <o1.19> Bulk IN
+//         <o2.3>  Interrupt OUT
+//         <o2.19> Interrupt IN
+//         <o3.3>  Isochronous OUT
+//         <o3.19> Isochronous IN
+//       </e>
+//       <e0.4> Endpoint 4
+//         <o1.4>  Bulk OUT
+//         <o1.20> Bulk IN
+//         <o2.4>  Interrupt OUT
+//         <o2.20> Interrupt IN
+//         <o3.4>  Isochronous OUT
+//         <o3.20> Isochronous IN
+//       </e>
+//       <e0.3> Endpoint 5
+//         <o1.5>  Bulk OUT
+//         <o1.21> Bulk IN
+//         <o2.5>  Interrupt OUT
+//         <o2.21> Interrupt IN
+//         <o3.5>  Isochronous OUT
+//         <o3.21> Isochronous IN
+//       </e>
+//     </h>
+#define RTE_USB_USB0_DEV_EP           0x0000001F
+#define RTE_USB_USB0_DEV_EP_BULK      0x003E003E
+#define RTE_USB_USB0_DEV_EP_INT       0x003E003E
+#define RTE_USB_USB0_DEV_EP_ISO       0x003E003E
+
+//   </e>
+// </e>
+
+
+// <e> USB1 Controller
+#define RTE_USB_USB1                  1
+//   <e> Pin Configuration
+#define RTE_USB_USB1_PIN              1
+//     <e> USB1_PPWR
+//     <i> VBUS drive signal (towards external charge pump or power management unit);
+//     <i> indicates that the VBUS signal must be driven (active HIGH).
+//     <i> PIN9_5
+//     </e>
+#define RTE_USB1_PPWR_PIN             1
+
+//     <e> USB1_PWR_FAULT
+//     <i> Port power fault signal indicating overcurrent condition;
+//     <i> this signal monitors over-current on the USB bus
+//        (external circuitry required to detect over-current condition).
+//     <i> PIN9_6
+//     </e>
+#define RTE_USB1_PWR_FAULT_PIN        1
+
+//     <e> USB1_IND0
+//     <i> USB1 port indicator LED control output 0
+//     <i> PINx_y
+//       <o1> Pin  <0=>P3_2 <1=>P9_4
+//     </e>
+#define RTE_USB1_IND0_PIN             1
+#define RTE_USB1_IND0_PORT            1
+
+//     <e> USB1_IND1
+//     <i> USB1 port indicator LED control output 1
+//     <i> PINx_y
+//       <o1> Pin  <0=>P3_1 <1=>P9_3
+//     </e>
+#define RTE_USB1_IND1_PIN             1
+#define RTE_USB1_IND1_PORT            1
+
+//     <e> USB1_VBUS
+//     <i> Monitors the presence of USB1 bus power.
+//     <i> PIN2_5
+//     </e>
+#define RTE_USB1_VBUS_PIN             1
+
+//   </e>
+
+//   <e> Device
+#define RTE_USB_USB1_DEV              1
+
+//     <h> Endpoints
+//     <i> Reduce memory requirements of Driver by disabling unused endpoints
+//       <e0.1> Endpoint 1
+//         <o1.1>  Bulk OUT
+//         <o1.17> Bulk IN
+//         <o2.1>  Interrupt OUT
+//         <o2.17> Interrupt IN
+//         <o3.1>  Isochronous OUT
+//         <o3.17> Isochronous IN
+//       </e>
+//       <e0.2> Endpoint 2
+//         <o1.2>  Bulk OUT
+//         <o1.18> Bulk IN
+//         <o2.2>  Interrupt OUT
+//         <o2.18> Interrupt IN
+//         <o3.2>  Isochronous OUT
+//         <o3.18> Isochronous IN
+//       </e>
+//       <e0.3> Endpoint 3
+//         <o1.3>  Bulk OUT
+//         <o1.19> Bulk IN
+//         <o2.3>  Interrupt OUT
+//         <o2.19> Interrupt IN
+//         <o3.3>  Isochronous OUT
+//         <o3.19> Isochronous IN
+//       </e>
+//     </h>
+#define RTE_USB_USB1_DEV_EP           0x0000003F
+#define RTE_USB_USB1_DEV_EP_BULK      0x003E003E
+#define RTE_USB_USB1_DEV_EP_INT       0x003E003E
+#define RTE_USB_USB1_DEV_EP_ISO       0x003E003E
+
+//   </e>
+// </e>
+
+
+#endif  /* __RTE_DEVICE_H */

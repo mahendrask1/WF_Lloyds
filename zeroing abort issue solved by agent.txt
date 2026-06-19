@@ -1,0 +1,25 @@
+
+How abort is supposed to work
+Zero_Key (software key code 17) — see keys.h; on your keypad it may be labelled Auto/Man or similar depending on variant.
+In key_action(), case Zero_Key: runs before the “start zero” logic:
+It sets ZERO_STATUS = 5 (abort / “ZEROING Error” path), which Zeroing_Display() turns into ZERO_STATUS == 7 and then waits for an acknowledgment key (Zeroing_Process.c).
+So mid-run abort = press the same zero key again while ZERO_STATUS is 1 or 2 (capturing belt revs).
+
+Why it failed after allowing field-mode start
+You already extended start/abort with GetFieldMode(), but two issues remained:
+
+Check_Start != 20 on the abort branch
+Both abort and start required Check_Start != 20. If Check_Start == 20 (e.g. still in the online menu / F flow from earlier), Zero_Key did nothing — so abort looked “broken” especially in odd UI states.
+Change: Abort no longer checks Check_Start, so you can always abandon zero from ZERO_STATUS == 1 or 2.
+
+Start had no idle guard
+If abort didn’t run (previously often because of Check_Start), the next test could still arm a new cycle with ZERO_STATUS = 1 while the state machine was still in 2, which behaves like restart / confusion, not a clean abort.
+Change: Start zero only runs when ZERO_STATUS == 0 (and still requires START and Check_Start != 20 for the menu case).
+
+Also, Display_Error() only forced ZERO_STATUS = 5 on load-cell fault during zero when GetDeIntVolMode() was true, not in field mode (so behaviour didn’t match your new field zeroing). That condition is updated to (GetDeIntVolMode() || GetFieldMode()) for the load-cell/ch1 block.
+The tacho block stays GetDeIntVolMode() only, because it sits under (!GetFieldMode()) already — GetFieldMode() could never be true there.
+
+Files touched
+key_control.c — abort: no Check_Start; ZERO_STATUS == 1 || 2; start: ZERO_STATUS == 0 only.
+Error_list.c — load-cell during-zero abort matches field + de-interlock vol as above.
+Rebuild and retest: with zero running in field mode, press the zero key once more — you should go to ZERO_STATUS == 5 → display → 7, then clear with a key as before. If anything still ignores the key, check Key_Input / debouncing after Zeroing_Display() waits on ZERO_STATUS == 6/7 (those paths only read CL vs “any key” inconsistently — separate from abort).

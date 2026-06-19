@@ -1,0 +1,372 @@
+/*************************************************************/
+
+
+##Changes 
+ AB PF4M  Inverters added
+ 
+RJ45:
+4 (+) , 5 (-)
+ 
+Parameters:
+C302-4   ;Commn Data rate=19200
+C303-1   ;Commn Node Addr=02
+C304-0   ;Commn loss Active=Display Fault and Stop
+C305-5.0 ;Commn loss time=5,0 secs
+C306-0   ;Comm format=8/1/N
+P106-1   ;3 wire
+P108-2   ;Ext Referecne, 0-10V
+t201-6  ;DI1 Sel=Commn Port Start/Stop and Reference ;Local-0/Remote-1
+t202-9  ;DI2 Sel=Coast to Stop Terminal  ;Emg Stop-0
+T221 -0 :Ready/Fault
+
+T1 -STOP 
+T2 - START PB
+T3 NC T4-NC
+T5 -Local-0/Remote-1 ;DI1
+T6 Emg stop DI2
+
+R/W commands:
+1.0 Write:
+        Start Addr=8192 (=Start(02)/Stop(01)/Reset Fault(08))
+/*-------------------------------------------------------------*/
+2026-05-26 (msk SIO):
+- UART3_IRQHandler: SIO=Off discards RX bytes (no RX_Data++); ABCC path only for SIO 2/3 with valid RX_Data/TX_Data.
+- serial_init: Timer3 only for Modbus-TCP/Profibus; SIO=Off clears ModBusIdx, MAX487 receive mode.
+- Fixes field hang when SIO=Off and PLC still polls UART3 (uninitialized ABCC pointer writes).
+/*-------------------------------------------------------------*/
+2026-05-26 (msk SPI/ADC):
+- SPI wait timeout added to prevent CPU hang if SPIF never sets (vibration / bus fault). msk 26-may-2026
+  Timer0 ISR increments spi_wait_tick (~5 ms per tick); spi_write() times out after
+  SPI_WAIT_TIMEOUT_TICKS (2 ticks ~10 ms) in timer.h.
+- On SPI timeout: spi_bus_fault set; adc_spi_fault_recovery() deselects ADC/EEPROM/RAM,
+  re-inits SPI (SPI_Initialize), runs init_adc_cs5532() (sync, config, internal cal 0x91/0x92,
+  start conversion 0x80). adc_spi_recovery_count incremented.
+- spi_timeout_enable(): disabled during boot init_adc_cs5532() (before Timer0); enabled at
+  end of Timer0_init(). Disabled again during fault recovery re-init.
+- spi_read() uses same timeout path (dummy spi_write per byte).
+- init_adc_cs5532() self-cal ready wait on P0.17 replaced infinite loop with
+  adc_wait_cal_ready() (~1 s max, ADC_READY_TIMEOUT_TICKS).
+- Files: Timer.c, timer.h, spi_test.c, spi.h, adc.c, functions.h
+- Diagnostics: spi_bus_fault, adc_spi_recovery_count (volatile).
+/*-------------------------------------------------------------*/
+2026-01-30:
+- Selectable Analog Output (AO) modules now work with multidrop communication.
+- Inverter communication failure error display added.
+/*-------------------------------------------------------------*/
+        Start Addr=8193-Speed Ref(0-500)
+2.0 Read
+        Start Addr=8448 (8448-Start/Stop/Fault/DI status 
+                ;8448.0 - Ready
+                ;8448.1 - Running
+                ;8448.7 - Fault
+                ;8448.12-DI1 status
+                ;8448.13-DI2 status
+				No of Reg=1
+
+
+/*************************************************************/
+
+/SPSS example for Local Start/Stop/
+ANM008 ; Local mode
+AI 027   ;Inverter running
+SM 011  ;Set Local Start
+RM 012  ;Reset Local Stop
+ANM008 ; Local mode
+ANI 027  ;Inverter not running
+RM 011  ;Reset Local Start
+SM 012  ;Set Local Stop
+
+ 
+
+
+R/W commands:
+
+1.0 Write:
+
+        Start Addr=8192 (=Start(02)/Stop(01)/Reset Fault(08))
+
+        Start Addr=8193-Speed Ref(0-500)
+
+2.0 Read
+
+        Start Addr=8448 (8448-Start/Stop/Fault/DI status, 8451-Actual Speed(0-500))
+
+                ;8448.0 - Ready
+
+                ;8448.1 - Running
+
+                ;8448.7 - Fault
+
+                ;8448.12-DI1 status
+
+                ;8448.13-DI2 status
+
+        No of Reg=4
+
+3.0 Read
+
+        Start Addr=0020 (AI Value-0 to 1024)
+
+        No of Reg=01
+/*************************************************************/
+/*************************************************************/
+
+ACS550 Inverter - Interface details & Configuration Parameters
+ 
+1.0 Digital Inputs - 6 nos
+1.1 DI1 - Start PB (NO)
+1.2 DI2 - Stop PB (NC)
+1.3 DI3 - Local (0)/Remote (1) Selection -Ext1/Ext2 Select
+1.4 DI4 - Emg. Stop (NC)
+1.5 DI5 - Free
+1.6 DI6 - Free
+ 
+2.0 Relay Outputs - 3 Nos
+2.1 RL1 - Ready to Start (1)
+2.2 RL2 - Running (1)
+2.3 RL3 - Fault (0)
+ 
+3.0 AO - 2 Nos
+ 
+4.0 AI - 2 Nos
+4.1 AI1 - Local setpoint (0-10Vdc, through pot)
+ 
+5.0 RS-485 Wiring
+5.1 Connectors
+            28/32  - Screen
+            29        - (+) B
+            30        - (-) A
+            31        - Gnd
+ 
+6.0 Parameters for AAG communication ACS550
+6.1 9802 - Comm Port Sel. =1 (Std Modbus)
+6.2 5301 - Protocol & Prog Ver.    =0118h (Prog Version >=18)
+6.3 5302 - Node Address               =02
+6.4 5303 - Baud                               =19.2
+6.5 5304 - Parity                   =0 (8,1 Stop,No Parity)
+6.6 5305 - Drive Model                   =2 (ABB Drv Full)  1
+6.7 5310 - Actual Value1 for MB   =118 (DI1-3;Bit0-DI3,Bit1-DI2,Bit2-DI1) ;so at 400005 DI1 ,DI2, DI3 can be read
+6.8 5311 - Actual Value2 for MB   =119 (DI4-6;Bit0-DI6,Bit1-DI5,Bit2-DI4) ;so at 400006 DI4 ,DI5, DI6 can be read
+6.9 5312 - Actual Value3 for MB   =122 (RO1-3;Bit0-RO3,Bit1-RO2,Bit2-RO1) ;so at 400007	Relay o/p status is available 
+6.10 5313- Actual Value4 for MB   =103 (Output freq in Hz)				  ;400008	for Output freq in HZ /*Changed here from 102 speed in RPM to 103 O/p Freq in HZ; Date:30/05/2018*/
+6.11 5314- Actual Value5 for MB   =120 (AI1)							  ;400009	for AI1 val read 
+6.12 1401- Relay1 assignment     =1 (1-Ready to Start)
+6.13 1402- Relay2 assignment     =2 (1-Running)
+6.14 1403- Relay3 assignment     =3 (0-Fault)
+6.15 1201- Constant Speed sel.    =0 (Disabled)
+6.16 1001- Ext1 command             =3 (3 wire start/stop, with DI1=Start & DI2=Stop)
+6.17 1002- Ext2 command             =10 (Commn)
+6.18 1003- Direction                        =1 (Forward only)
+6.19 1102- Ext1/Ext2 Sel.   =3 (Sel. using DI3;0-Ext1,1-Ext2)
+6.20 1103- Ref1 Select                   =1 (AI1)
+6.21 1106- Ref2 Select                   =8 (Commn)
+6.22 2109- Emg Stop                      =-4 (0-Emg stop,1-Healthy)
+6.23 1604- Fault Reset Sel =8 (Commn)
+6.24 3018- Comm Fault Function  =1 (Fault) 
+6.25 3019- Comm Fault Time      =5,0 secs
+6.26 1201- Const Speed 	=0 (Const speed function disable)/*1/11/2017 by vishal*/
+
+R/W commands Modbus:
+1.0 Write:
+        Start Addr=0000 (=Start(0x043f)/Stop(0x0406)/Reset Fault(0x0486))
+        Start Addr=0003-Speed Ref(0-500)
+2.0 Read
+        Start Addr=0004 (Start= 0x1B37 ;Stop= 0x0a31; Fault= 0x0a38;DI status )
+                ;0004.0 - (1)Ready
+                ;0004.1 - (1)Ready to opertae
+                ;0004.2 - (1)Operation Enabled
+                ;0004.3 - (1)Fault
+                ;0004.4 - Off2 (1)Inactive/(0)Active
+				;0004.5 - Off3 (1)Inactive/(0)Active
+				;0004.6 - Switch on Inhibit (1)Active/(0)Not Active
+                ;0004.7 - (1)Alarm/(0)No Alarm
+                ;0004.8 - (1)Operating At Set Point/(0)Not within tolerance
+                ;0004.9 - (1)Remote/(0)Local
+                ;0004.10 - Limit (1)value > high limit/(0) value > Low limi
+				;0004.11 - Off3 (1)Ext2/(0)Ext1
+				;0004.12 - (1)External Run Eable Signal received/(0)Not received
+                ;0004.13 - Not Used
+                ;0004.14 - Not Used
+                ;0004.15 - Not Used
+				No of Reg=1
+
+Terminal DICOM to GND
+Terminal DI1 NO 
+Terminal DI2 to (+24v)  
+Terminal DI3 to (+24v) 
+Terminal DI4 to (+24v)  
+
+
+ 
+###When Emg. input pressed in Inverter, Local stop input needs to be removed temperorily to reset fault!!!!
+/*************************************************************/
+/*************************************************************/
+
+ATV312H075N4 Inverter - Interface details & Configuration Parameters
+ 
+1.0 Digital Inputs - 6 nos
+1.1 DI1 - Stop PB (NC)
+1.2 DI2 - Start PB (NO)
+1.3 DI3 - Local (0)/Remote (1) 
+1.4 DI4 - Emg. Stop (NC)
+1.5 DI5 - Reverse direction
+1.6 DI6 - Free
+ 
+2.0 Relay Outputs - 3 Nos
+2.1 RL1 - Drv Fault(1)
+2.2 RL2 - NO(1) 
+
+4.1 AI1 - Local setpoint (0-10Vdc, through pot)
+ 
+5.0 RS-485 Wiring
+5.1 Connectors RJ45
+			4        - (+) B
+            5        - (-) A
+            8        - Common
+ 
+6.12 Parameters for AAG communication ATV312H075N4
+
+Under Ctl parameter
+6.0 LAC - Level access  	   	=L3  (Advanced)
+6.1 Fr1 - Ref 1             	=AI1 (Analog ip 1 via pot) 
+6.2 Fr2 - Ref 2             	=Ndb (Modbus Rtu)
+6.3 rfc - Ref switching 		=LI3 (Via LI3 0-Local/1-Remote)
+6.4 CHCF- Ref & Command mode	=SEP (Seperate)
+6.5 Cd1 - Command 1 selection  	=tEr (Start/stop via terminal for ref1 )
+6.6 Cd2 - ndb                  	=ndb (Modbus)
+6.7 CCS - Command switching    	=LI3 (Via LI3 0-Local/1-Remote)
+
+Under I_O parameter
+6.8 tcc - 2/3 wire 				=3C(3 wire)
+6.9 rrs - reverse  				=NO (default) 
+
+Under Fun parameter
+Inside Stc
+6.10 Stt - stop type      		=Fst (Fast STOP)
+6.11 Fst - Fast stop ip 		=LI4 (0-Emg fault/1- Helthy)
+Inside JOG
+6.11 JOG - JOG 					=NO (Jog not used)
+
+Under CON parameter
+6.15 Add  - Node Address        =02
+6.16 tbr  - Baud                =19.2
+6.17 tfo - Parity               =8n1 (8,1 Stop,No Parity)
+6.14 tto - com lost fault time  =10.0 (10 sec)
+
+R/W commands Modbus:
+1.0 Write:
+        Start Addr=8501 (=Start(0x0015)/Stop(0x0006)/Reset Fault(0x0028))
+        Start Addr=8502-Speed Ref(0-500)
+2.0 Read
+        Start Addr=3201 (Start= 0x1B37 ;Stop= 0x0a31; Fault= 0x0a38;DI status )
+                ;3201.0 - (1)Ready to switch on
+                ;3201.1 - (1)Switched on
+                ;3201.2 - (1)Operation Enabled
+                ;3201.3 - (1)Fault
+                ;3201.4 - Off2 (1)Inactive/(0)Active
+				;3201.5 - Quick stop at 0
+				;3201.6 - Switch on Diasabled (1)Active/(0)Not Active
+                ;3201.7 - (1)Alarm/(0)No Alarm
+                ;3201.8 - Not Used 
+                ;3201.9 - (1)Remote/(0)Local
+                ;3201.10 - Ref reached
+				;3201.11 - Ref Exceeded
+				;3201.12 - Not Used
+                ;3201.13 - Not Used
+                ;3201.14 - Not Used
+                ;3201.15 - Not Used
+				
+				Operating  freq = 3202	
+				No of Reg=2
+		
+Terminal DICOM to GND
+Terminal DI1  STOP PB  ( NC )
+Terminal DI2  START PB ( NO ) 
+Terminal DI3  LOCAL/REMOTE(0-Local/1-Remote) 
+Terminal DI4  Emg Stop   (0-Emg fault/1-Healthy)
+
+###When Emg. input pressed in Inverter, Local stop input needs to be removed temperorily to reset fault!!!!
+
+/**********************************************************************************************************************/
+/*************************************************************/
+
+Yaskawa-J1000(CIMRJT4A0004BAA) Inverter - Interface details & Configuration Parameters
+ 
+1.0 Digital Inputs - 6 nos
+1.1 DI1 - Stop PB (NC)
+1.2 DI2 - Start PB (NO)
+1.3 DI3 - Local (0)/Remote (1) 
+1.4 DI4 - Emg. Stop (NC)
+1.5 DI5 - Reverse direction
+1.6 DI6 - Free
+ 
+2.0 Relay Outputs - 1 No
+2.1 RL1 - Drv Fault(1)
+
+4.1 AI1 - Local setpoint (0-10Vdc, through pot)
+ 
+5.0 RS-485 Wiring
+5.1 Connectors RS485Module(SI485/J)
+		Short S(+) to R(+)  : (+) B
+        Short S(-) to R(-)  : (-) A
+		IG 					: Common
+ 
+6 Parameters for AAG communication Yaskawa-J1000(CIMRJT4A0004BAA)
+
+6.0 b1.1 - Frequency Reference Selection  	   	= 1: Terminals (Analog Input Terminals)
+6.1 b1.2 - Run Command Selection				= 1: Control Circuit Terminal (3 wire ) 
+6.2 b1.3 - Stopping Method Selection			= 0: Ramp to Stop 
+6.3 b1.4 - Reverse Operation Selection			= 1: Reverse operation disabled
+6.4 b1.7 - LOCAL/REMOTE Run Selection 			= 0: Run Command Must Be Cycled	
+6.5 E1.1 - Input voltage setting				= 400 V
+6.6 E1.4 - Max output fequency					= 50 Hz  
+6.6 E1.7 - Base fequency						= 50 Hz 
+Under I_O parameter
+6.7 H1.1 - DI1 									= F:Not used/Through Mode (3 wire- Local Start(NO))
+6.8 H1.2 - DI2 									= F:Not used/Through Mode (3 wire- Local Stop(NC))
+6.7 H1.3 - DI3 									= 2:Serial Communication Reference Selection(Local -0/ Remote-1)
+6.7 H1.4 - DI4 									= 17:Fast-stop (N.C.) (Emergency Stop NC)
+6.7 H1.5 - DI5 									= 0:3 wire sequence(Reverse-1 / Forward-0)
+6.7 H1.6 - DI6 									= Free
+
+Analog Input Terminal
+6.8 H3.1 - 0 									= 0 to 10Vdc Limit
+Modbus Com Setting
+6.9  H5.1 - Drive Slave Address					= 2/3 
+6.10 H5.2 - Communication Speed Selection		= 4 : 19200
+6.11 H5.3 - Communication Parity Selection		= 0 : NO Parity
+6.12 H5.4 - Stopping Method after Communication Error = 1 :Coast to stop
+6.13 H5.5 - Communication Fault Detection Selection	= 1 : Communication Fault Detection Selection
+6.14 H5.6 - Drive Transmit Wait Time			= 10 : Drive Transmit Wait Time
+6.15 H5.6 - RTS Control Selection				= 1  : For Rs485 communication
+
+R/W commands Modbus:
+1.0 Write:
+        Start Addr=0x0001 (=Start(0x0001)/Stop(0x0000)/Reset Fault(0x0008))
+        Start Addr=0x0002 -Speed Ref(0-500)
+2.0 Read
+        Start Addr=0x0020 (Start= 0xC001 ;Stop= 0xC004; Fault= 0xC028)
+                ;0020.0 - (1)During Run
+                ;0020.1 - (1)During Reverse
+                ;0020.2 - (1)Drive Ready
+                ;0020.3 - (1)Fault
+                ;0020.4 - Data setting error
+				;0020.5 - Multifunction Contact op
+				;0020.6-13 - reserved
+                ;0020.14 - Com Ref Status
+                ;0020.15 - Com Ref Status
+				
+				Operating  freq = 0x0023		
+				No of Reg=2
+		
+
+Terminal S1  STOP PB  ( NC )
+Terminal S2  START PB ( NO ) 
+Terminal S3  LOCAL/REMOTE(0-Local/1-Remote) 
+Terminal S4  Emg Stop   (0-Emg fault/1-Healthy)
+Terminal S5  Reverse Direction
+Terminal S6  Free
+
+
+###When Emg. input pressed in Inverter, Local stop input needs to be removed temperorily to reset fault!!!!
+/********************************************************************************************************************/

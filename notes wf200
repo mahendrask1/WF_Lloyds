@@ -1,0 +1,8 @@
+
+check multi write and address overrun
+void 	save_calib_val(void)
+{
+	bytes_written=0;
+//	calib_val[2] = Count_DL;//save_calib_val();
+	eeprom_write_block(512,(char*)calib_val,80,0,2);// 24 changed to 80
+	bytes_written=324;

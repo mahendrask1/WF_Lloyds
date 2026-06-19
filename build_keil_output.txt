@@ -1,0 +1,742 @@
+*** Using Compiler 'V5.06 update 2 (build 183)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
+Build target 'LPC1768 Flash'
+compiling Font_Calibri_10.c...
+compiling Font_Arial_32.c...
+compiling Font_Arial_16.c...
+compiling lpc17xx_gpio.c...
+compiling Joystick_MCB1700.c...
+compiling GPIO_LPC17xx.c...
+compiling OLED_2_7_12864.c...
+OLED_2_7_12864.c(864): warning:  #550-D: variable "char_address" was set but never used
+  unsigned int char_address;
+OLED_2_7_12864.c(1138): warning:  #550-D: variable "char_address" was set but never used
+  unsigned int char_address;
+OLED_2_7_12864.c(1168): warning:  #550-D: variable "char_address" was set but never used
+  unsigned int char_address;
+OLED_2_7_12864.c(1170): warning:  #177-D: variable "val1" was declared but never referenced
+  unsigned char val1,val;
+OLED_2_7_12864.c(1255): warning:  #550-D: variable "char_address" was set but never used
+  unsigned int char_address;
+OLED_2_7_12864.c(1359): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+  Print_String2(&new_string_print, start_row, start_col,font_size,underline);
+OLED_2_7_12864.c(1462): warning:  #550-D: variable "old_string_ptr" was set but never used
+   char *new_string_print,*old_string_ptr;
+OLED_2_7_12864.c(1464): warning:  #177-D: variable "l" was declared but never referenced
+  unsigned char j=0,k=0,l=0,j2=0;
+OLED_2_7_12864.c(1581): warning:  #550-D: variable "old_string_ptr" was set but never used
+   char *new_string_print,*old_string_ptr;
+OLED_2_7_12864.c(1583): warning:  #177-D: variable "l" was declared but never referenced
+  unsigned char j=0,k=0,l=0,j2=0;
+OLED_2_7_12864.c(1709): warning:  #550-D: variable "old_string_ptr" was set but never used
+   char *new_string_print,*old_string_ptr;
+OLED_2_7_12864.c(1711): warning:  #177-D: variable "l" was declared but never referenced
+  unsigned char j=0,k=0,l=0,j2=0;
+OLED_2_7_12864.c(1873): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+   Print_String2(&new_string_print, start_row, start_col,font_size,underline);
+OLED_2_7_12864.c(1878): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+       Print_String2(&unit_string_ptr, start_row, 50,font_size,underline);
+OLED_2_7_12864.c(1880): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+       Print_String2(&unit_string_ptr, start_row, 50,font_size,underline);
+OLED_2_7_12864.c(1945): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+   Print_String2(&new_string_print, start_row, start_col,font_size,underline);
+OLED_2_7_12864.c(1950): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&unit_string_ptr, start_row, 50,font_size,underline);
+OLED_2_7_12864.c(1952): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&unit_string_ptr, start_row, 50,font_size,underline);
+OLED_2_7_12864.c(1976): warning:  #177-D: label "jump_lcd" was declared but never referenced
+                  jump_lcd:
+OLED_2_7_12864.c(2077): warning:  #167-D: argument of type "unsigned char *" is incompatible with parameter of type "char *restrict"
+      sprintf(new_string,"%.f",temp1);
+OLED_2_7_12864.c(2082): warning:  #167-D: argument of type "unsigned char *" is incompatible with parameter of type "char *restrict"
+      sprintf(new_string,"%.1f",temp1);
+OLED_2_7_12864.c(2087): warning:  #167-D: argument of type "unsigned char *" is incompatible with parameter of type "char *restrict"
+      sprintf(new_string,"%.2f",temp1);
+OLED_2_7_12864.c(2092): warning:  #167-D: argument of type "unsigned char *" is incompatible with parameter of type "char *restrict"
+      sprintf(new_string,"%.3f",temp1);
+OLED_2_7_12864.c(2097): warning:  #167-D: argument of type "unsigned char *" is incompatible with parameter of type "char *restrict"
+      sprintf(new_string,"%.4f",temp1);
+OLED_2_7_12864.c(2106): warning:  #167-D: argument of type "unsigned char **" is incompatible with parameter of type "char **"
+   Print_String(&new_string_print, start_row, start_col,font_size,underline);
+OLED_2_7_12864.c: 25 warnings, 0 errors
+compiling menu.c...
+menu.c(486): warning:  #111-D: statement is unreachable
+      
+VIC_DisableIRQ(TIMER0_IRQn);
+menu.c(502): warning:  #223-D: function "USBD_CDC_ACM_WriteData" declared implicitly
+      m= USBD_CDC_ACM_WriteData(0U, (P_String), strlen(P_String));
+menu.c(612): warning:  #111-D: statement is unreachable
+      Dwnd_flag = 1;
+menu.c(875): warning:  #223-D: function "USBD_CDC_ACM_WriteData" declared implicitly
+          m = USBD_CDC_ACM_WriteData(0U, (P_String), strlen(P_String));
+menu.c(890): warning:  #223-D: function "USBD_CDC_ACM_WriteData" declared implicitly
+          m = USBD_CDC_ACM_WriteData(0U, (P_String), strlen(P_String));
+menu.c(1932): warning:  #111-D: statement is unreachable
+      return;
+menu.c(2049): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(&new_string_print_online, start_row, start_col, font_size, j_online + 1);
+menu.c(2056): warning:  #177-D: label "exit_and_return" was declared but never referenced
+  exit_and_return:
+menu.c(2095): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(&(*(Main_menu[Sub_Menu_no].mm_name)), 
+ine2, 0, 
+ont10, 0);
+menu.c(2139): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(&print_sub_menu, 
+ine3, 10, 
+ont10, 0);
+menu.c(2206): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                              Print_String2(unitstri[
+nits_Capacity], 
+ine4, 30, 
+ont10, 0);
+menu.c(2246): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(&print_sub_menu, 
+ine4, 10, 
+ont10, 0);
+menu.c(2256): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(no_string, 
+ine6, 52, 
+ont10, 0);
+menu.c(2085): warning:  #177-D: variable "total_par" was declared but never referenced
+      char total_par ;
+menu.c: 14 warnings, 0 errors
+compiling keys.c...
+compiling lpc17xx_clkpwr.c...
+compiling lpc17xx_rtc.c...
+compiling rtc.c...
+rtc.c(39): warning:  #177-D: variable "rtc_String_date" was declared but never referenced
+      char* rtc_String_date;
+rtc.c(40): warning:  #177-D: variable "rtc_String_time" was declared but never referenced
+    char* rtc_String_time;
+rtc.c(41): warning:  #177-D: variable "rtc_write1" was declared but never referenced
+      RTC_TIME_Type rtc_write1;
+rtc.c: 3 warnings, 0 errors
+compiling lpc17xx_timer.c...
+compiling lpc17xx_nvic.c...
+compiling adc.c...
+adc.c(369): warning:  #177-D: variable "temp2" was declared but never referenced
+      unsigned char y,temp2=0,*p;            // store 8 bit of ACC data
+adc.c: 1 warning, 0 errors
+compiling Timer.c...
+compiling eeprom.c...
+eeprom.c(59): warning:  #177-D: variable "i" was declared but never referenced
+      unsigned int start_address_lo, start_address_hi,bytecounter,local_start_add,Page_Counter,i;
+eeprom.c(155): warning:  #177-D: variable "c" was declared but never referenced
+      unsigned char aaa,b,c,d,e,f;
+eeprom.c(155): warning:  #177-D: variable "d" was declared but never referenced
+      unsigned char aaa,b,c,d,e,f;
+eeprom.c(155): warning:  #177-D: variable "e" was declared but never referenced
+      unsigned char aaa,b,c,d,e,f;
+eeprom.c(155): warning:  #177-D: variable "f" was declared but never referenced
+      unsigned char aaa,b,c,d,e,f;
+eeprom.c(328): warning:  #177-D: variable "i" was declared but never referenced
+      int i;
+eeprom.c(344): warning:  #177-D: variable "i" was declared but never referenced
+      int i;
+eeprom.c: 7 warnings, 0 errors
+compiling lpc17xx_spi.c...
+compiling lpc17xx_uart.c...
+compiling spi_test.c...
+spi_test.c(36): warning:  #177-D: variable "xferConfig" was declared but never referenced
+          SPI_DATA_SETUP_Type xferConfig;
+spi_test.c: 1 warning, 0 errors
+compiling print_uart.c...
+print_uart.c(225): warning:  #188-D: enumerated type mixed with another type
+                  UARTConfigStruct.Parity    = Modbus_Parity;
+print_uart.c: 1 warning, 0 errors
+compiling calibration.c...
+calibration.c(192): warning:  #550-D: variable "scale_cap1" was set but never used
+      float Span_Count_R,Span_Count_Q,scale_cap1;
+calibration.c(2067): warning:  #186-D: pointless comparison of unsigned integer with zero
+                                                                           if((Min_Count_Channel2 < 0)||(Min_Count_Channel2 >3900))
+calibration.c: 2 warnings, 0 errors
+compiling key_control.c...
+key_control.c(617): warning:  #186-D: pointless comparison of unsigned integer with zero
+                      if( ( IO_Disp_L5 >= 0 ) && ( IO_Disp_L5 < 40 ) )
+key_control.c: 1 warning, 0 errors
+compiling filter.c...
+filter.c(112): warning:  #177-D: variable "temp1" was declared but never referenced
+      int temp1;
+filter.c(113): warning:  #550-D: variable "Gate_Postion_temp" was set but never used
+      unsigned int Hop_Per_Temp,Gate_Postion_temp;
+filter.c(193): warning:  #550-D: variable "Gate_Postion_temp" was set but never used
+      unsigned int Hop_Per_Temp,Gate_Postion_temp;
+filter.c(615): warning:  #550-D: variable "c" was set but never used
+      float a,b,c;
+filter.c: 4 warnings, 0 errors
+compiling plc.c...
+plc.c(475): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&msg_ptr1,
+ine1,15,
+ont10,under_line);
+plc.c(483): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&msg_ptr1,
+ine2,15,
+ont10,under_line);
+plc.c(491): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&msg_ptr1,
+ine3,15,
+ont10,under_line);
+plc.c(499): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&msg_ptr1,
+ine4,15,
+ont10,under_line);
+plc.c(507): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      Print_String2(&msg_ptr1,
+ine5,15,
+ont10,under_line);
+plc.c(726): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[0];
+plc.c(727): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine1,1,
+ont10,0);    //Print Header at line1
+plc.c(729): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[1];
+plc.c(730): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine2,5,
+ont10,0);    //Print PLCS at line2
+plc.c(732): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[2];
+plc.c(733): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine3,5,
+ont10,0);    //Print PLCA at line3
+plc.c(735): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[3];
+plc.c(736): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine4,1,
+ont10,0);    //Print Assemble at line4
+plc.c(738): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[4];
+plc.c(739): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine4,35,
+ont10,0);    //Print Delete at line4
+plc.c(741): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[5];
+plc.c(742): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine5,1,
+ont10,0);    //Print Edit at line5
+plc.c(744): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[6];
+plc.c(745): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine5,35,
+ont10,0);    //Print Insert at line5
+plc.c(747): warning:  #513-D: a value of type "unsigned char *" cannot be assigned to an entity of type "char *"
+                      msg_ptr1=plc_menu_str[7];
+plc.c(748): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(&msg_ptr1,
+ine6,1,
+ont10,0);    //Print EnterPar at line6
+plc.c: 21 warnings, 0 errors
+compiling Online.c...
+Online.c(288): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(online_string[Counter1],
+ine2,0,
+ont10,0);    //diplay parameter line1
+Online.c(290): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(online_string[Counter2],
+ine3,0,
+ont10,0);    //diplay parameter line2
+Online.c(300): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(online_string[Counter3],
+ine4,0,
+ont10,0);    //diplay parameter line3
+Online.c(302): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(online_string[increment],
+ine5,0,
+ont10,0);    //diplay parameter line4
+Online.c(571): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(582): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(593): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(604): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(617): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Display_Sign],
+ine2,24,
+ont10,0);
+Online.c(624): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(648): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Deviation_Sign],
+ine2,24,
+ont10,0);
+Online.c(655): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine2,38,
+ont10,0);
+Online.c(666): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[Hop_Load_Sign],
+ine2,24,
+ont10,0);
+Online.c(682): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[CM_Negative],
+ine2,24,
+ont10,0);
+Online.c(711): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(722): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(733): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(744): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(757): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Display_Sign],
+ine3,24,
+ont10,0);
+Online.c(764): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(788): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Deviation_Sign],
+ine3,24,
+ont10,0);
+Online.c(795): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine3,38,
+ont10,0);
+Online.c(806): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[Hop_Load_Sign],
+ine3,24,
+ont10,0);
+Online.c(822): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[CM_Negative],
+ine3,24,
+ont10,0);
+Online.c(852): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(863): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(874): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(885): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(898): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Display_Sign],
+ine4,24,
+ont10,0);
+Online.c(905): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(929): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Deviation_Sign],
+ine4,24,
+ont10,0);
+Online.c(936): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine4,38,
+ont10,0);
+Online.c(947): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[Hop_Load_Sign],
+ine4,24,
+ont10,0);
+Online.c(963): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[CM_Negative],
+ine4,24,
+ont10,0);
+Online.c(993): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1004): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1015): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1026): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                      Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1039): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Display_Sign],
+ine5,24,
+ont10,0);
+Online.c(1046): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1070): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[Deviation_Sign],
+ine5,24,
+ont10,0);
+Online.c(1077): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                  Print_String2(sign_str[2],
+ine5,38,
+ont10,0);
+Online.c(1088): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[Hop_Load_Sign],
+ine5,24,
+ont10,0);
+Online.c(1104): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+              Print_String2(sign_str[CM_Negative],
+ine5,24,
+ont10,0);
+Online.c(1127): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 0: Print_String(io_str[0],Row_no,col_no,
+ont10,0); break;
+Online.c(1138): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 11: Print_String(io_str[1],Row_no,col_no,
+ont10,0); break;
+Online.c(1139): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 12: Print_String(io_str[2],Row_no,col_no,
+ont10,0); break;
+Online.c(1140): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 13: Print_String(io_str[3],Row_no,col_no,
+ont10,0); break;
+Online.c(1141): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 14: Print_String(io_str[4],Row_no,col_no,
+ont10,0); break;
+Online.c(1142): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 15: Print_String(io_str[5],Row_no,col_no,
+ont10,0); break;
+Online.c(1143): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 16: Print_String(io_str[6],Row_no,col_no,
+ont10,0); break;
+Online.c(1144): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 17: Print_String(io_str[7],Row_no,col_no,
+ont10,0); break;
+Online.c(1145): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 18: Print_String(io_str[8],Row_no,col_no,
+ont10,0); break;
+Online.c(1146): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 19: Print_String(io_str[9],Row_no,col_no,
+ont10,0); break;
+Online.c(1147): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 20: Print_String(io_str[10],Row_no,col_no,
+ont10,0); break;
+Online.c(1148): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 21: Print_String(io_str[11],Row_no,col_no,
+ont10,0); break;
+Online.c(1149): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 22: Print_String(io_str[12],Row_no,col_no,
+ont10,0); break;
+Online.c(1150): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 23: Print_String(io_str[13],Row_no,col_no,
+ont10,0); break;
+Online.c(1151): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 24: Print_String(io_str[14],Row_no,col_no,
+ont10,0); break;
+Online.c(1152): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 25: Print_String(io_str[15],Row_no,col_no,
+ont10,0); break;
+Online.c(1153): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 26: Print_String(io_str[16],Row_no,col_no,
+ont10,0); break;
+Online.c(1154): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 27: Print_String(io_str[17],Row_no,col_no,
+ont10,0); break;
+Online.c(1155): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 28: Print_String(io_str[18],Row_no,col_no,
+ont10,0); break;
+Online.c(1156): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 29: Print_String(io_str[19],Row_no,col_no,
+ont10,0); break;
+Online.c(1157): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+          case 30: Print_String(io_str_name[4],0,col_no,
+ont10,0); break;
+Online.c(1312): warning:  #186-D: pointless comparison of unsigned integer with zero
+                      if( ( IO_Disp_L5_offline >= 0 ) && ( IO_Disp_L5_offline < 40 ) )
+Online.c: 66 warnings, 0 errors
+compiling io_control.c...
+compiling totalizer.c...
+totalizer.c(205): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                                   Print_String2(&Totaliser_clear_ptr,
+ine1,0,
+ont10,0);
+totalizer.c(207): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                                   Print_String2(&Totaliser_clear_ptr,
+ine2,0,
+ont10,0);
+totalizer.c: 2 warnings, 0 errors
+compiling initialize.c...
+initialize.c(482): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+      Print_String(&IT_LOGO, 
+ine2, 10, 
+ont16, 0);
+initialize.c(483): warning:  #167-D: argument of type "const char **" is incompatible with parameter of type "char **"
+      Print_String(&IT_LOGO1, 
+ine3, 10, 
+ont16, 0);
+initialize.c(508): warning:  #223-D: function "adc1_ltc1288_cs" declared implicitly
+      adc1_ltc1288_cs(1);
+initialize.c(512): warning:  #223-D: function "adc2_ltc1288_cs" declared implicitly
+      adc2_ltc1288_cs(1);
+initialize.c(613): warning:  #223-D: function "Init_Totaliser" declared implicitly
+      Init_Totaliser();
+initialize.c(614): warning:  #223-D: function "Tacho_init" declared implicitly
+      Tacho_init();
+initialize.c(665): warning:  #223-D: function "Temp_Intialisation" declared implicitly
+      Temp_Intialisation();
+initialize.c(666): warning:  #223-D: function "serial_init" declared implicitly
+      serial_init();
+initialize.c(667): warning:  #223-D: function "DIO_serial_init" declared implicitly
+      DIO_serial_init();
+initialize.c(669): warning:  #223-D: function "Counter1_init" declared implicitly
+      Counter1_init();
+initialize.c(676): warning:  #223-D: function "BL_init_calculation" declared implicitly
+      BL_init_calculation();
+initialize.c(677): warning:  #223-D: function "feedrate_display_Init_calculation" declared implicitly
+      feedrate_display_Init_calculation();
+initialize.c(678): warning:  #223-D: function "Timer0_init" declared implicitly
+      Timer0_init();
+initialize.c(732): warning:  #223-D: function "serial_init" declared implicitly
+      serial_init();
+initialize.c(751): warning:  #223-D: function "Init_Totaliser" declared implicitly
+      Init_Totaliser();
+initialize.c(752): warning:  #223-D: function "Tacho_init" declared implicitly
+      Tacho_init();
+initialize.c(769): warning:  #223-D: function "BL_init_calculation" declared implicitly
+      BL_init_calculation();
+initialize.c(770): warning:  #223-D: function "feedrate_display_Init_calculation" declared implicitly
+      feedrate_display_Init_calculation();
+initialize.c: 18 warnings, 0 errors
+compiling modbus.c...
+compiling Dac.c...
+compiling Error_list.c...
+compiling main.c...
+main.c(172): warning:  #177-D: variable "P_String" was declared but never referenced
+      char* P_String;
+main.c: 1 warning, 0 errors
+compiling adc_12bit.c...
+compiling Integrate.c...
+compiling Zeroing_Process.c...
+compiling Tacho.c...
+compiling Online_menus.c...
+Online_menus.c(63): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 1:Print_String2(Ram_add_no[0],Row_no,col_no,
+ont10,0);break;      //'0'
+Online_menus.c(64): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 2:Print_String2(Ram_add_no[1],Row_no,col_no,
+ont10,0);break;      //'1'
+Online_menus.c(65): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 3:Print_String2(Ram_add_no[2],Row_no,col_no,
+ont10,0);break;      //'2'
+Online_menus.c(66): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 4:Print_String2(Ram_add_no[3],Row_no,col_no,
+ont10,0);break;      //'3'
+Online_menus.c(67): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 5:Print_String2(Ram_add_no[4],Row_no,col_no,
+ont10,0);break;      //'4'
+Online_menus.c(68): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 6:Print_String2(Ram_add_no[5],Row_no,col_no,
+ont10,0);break;      //'5'
+Online_menus.c(69): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 7:Print_String2(Ram_add_no[6],Row_no,col_no,
+ont10,0);break;      //'6'
+Online_menus.c(70): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 8:Print_String2(Ram_add_no[7],Row_no,col_no,
+ont10,0);break;      //'7'
+Online_menus.c(71): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          case 9:Print_String2(Ram_add_no[8],Row_no,col_no,
+ont10,0);break;      //'8'
+Online_menus.c(72): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+      case 10:Print_String2(Ram_add_no[9],Row_no,col_no,
+ont10,0);break;  //'9'
+Online_menus.c(195): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                          Print_String2(blank,(temp_line-1), 0,
+ont10,0);
+Online_menus.c(197): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                           Print_String2(blank,(temp_line+1), 0,
+ont10,0);
+Online_menus.c(199): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+          Print_String2(cor, line_no, 0,
+ont10,0);
+Online_menus.c(209): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                          case 0:Print_String2(&(*(Online_Main_menu[0].mm_name)), 
+ine1,0,
+ont10,0);    //.450ms 1 line
+Online_menus.c(211): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                          case 1: Print_String2(&(*(Online_Main_menu[1].mm_name)), 
+ine2,7,
+ont10,0);
+Online_menus.c(213): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                          case 2: Print_String2(&(*(Online_Main_menu[2].mm_name)), 
+ine3,7,
+ont10,0);
+Online_menus.c(215): warning:  #167-D: argument of type "char **" is incompatible with parameter of type "const char **"
+                          case 3:Print_String2(&(*(Online_Main_menu[3].mm_name)), 
+ine4,7,
+ont10,0);
+Online_menus.c: 17 warnings, 0 errors
+compiling load_cell_flter_claculations.c...
+compiling Modbus_Registers.c...
+compiling Modbus_DIO.c...
+Modbus_DIO.c(25): warning:  #68-D: integer conversion resulted in a change of sign
+  char DIO_ModBusIdx = -1,DIO_Err_Gen;
+Modbus_DIO.c: 1 warning, 0 errors
+compiling Ram_adress_data_display.c...
+compiling RAM512KB_Ext.c...
+compiling usb_app.c...
+compiling lpc17xx_pinsel.c...
+compiling Controls.c...
+Controls.c(570): warning:  #1-D: last line of file ends without a newline
+  //-------------------------------------------------------------------------------------
+Controls.c: 1 warning, 0 errors
+compiling Valve_Control.c...
+compiling Inverter.c...
+Inverter.c(113): warning:  #68-D: integer conversion resulted in a change of sign
+      DIO_ModBusIdx = -1;
+Inverter.c(175): warning:  #68-D: integer conversion resulted in a change of sign
+      DIO_ModBusIdx = -1;
+Inverter.c(215): warning:  #177-D: variable "i" was declared but never referenced
+      int i;
+Inverter.c(629): warning:  #68-D: integer conversion resulted in a change of sign
+                                      DIO_ModBusIdx = -1;
+Inverter.c(731): warning:  #68-D: integer conversion resulted in a change of sign
+                          DIO_ModBusIdx = -1;
+Inverter.c(743): warning:  #68-D: integer conversion resulted in a change of sign
+                              DIO_ModBusIdx = -1;
+Inverter.c(765): warning:  #68-D: integer conversion resulted in a change of sign
+                          DIO_ModBusIdx = -1;
+Inverter.c(1085): warning:  #68-D: integer conversion resulted in a change of sign
+                                      DIO_ModBusIdx = -1;
+Inverter.c(1183): warning:  #68-D: integer conversion resulted in a change of sign
+                          DIO_ModBusIdx = -1;
+Inverter.c(1195): warning:  #68-D: integer conversion resulted in a change of sign
+                              DIO_ModBusIdx = -1;
+Inverter.c(1217): warning:  #68-D: integer conversion resulted in a change of sign
+                          DIO_ModBusIdx = -1;
+Inverter.c: 11 warnings, 0 errors
+compiling abcc_sw_port.c...
+compiling Auto Calibration.c...
+Auto Calibration.c(93): warning:  #111-D: statement is unreachable
+                          break;
+Auto Calibration.c: 1 warning, 0 errors
+compiling abcc_handler_par.c...
+compiling abcc_handler_par30.c...
+compiling abcc_par30_drv.c...
+compiling abcc_par_drv.c...
+compiling abcc_crc16.c...
+compiling abcc_sys_adapt.c...
+compiling abcc_crc32.c...
+compiling abcc_handler_spi.c...
+compiling abcc_handler_ser.c...
+compiling abcc_spi_drv.c...
+compiling abcc_serial_drv.c...
+compiling abcc_cmd_seq.c...
+compiling abcc_debug_err.c...
+compiling abcc_link.c...
+compiling abcc_handler.c...
+compiling abcc_remap.c...
+compiling abcc_mem.c...
+compiling abcc_timer.c...
+compiling abcc_setup.c...
+compiling ccl.c...
+compiling cfn.c...
+compiling cop.c...
+compiling dev.c...
+compiling ect.c...
+compiling dpv1.c...
+compiling eip.c...
+compiling epl.c...
+compiling mod.c...
+compiling prt.c...
+compiling app_obj.c...
+compiling etn_obj.c...
+compiling ad_obj.c...
+compiling opcua_obj.c...
+compiling safe_obj.c...
+compiling sync_obj.c...
+compiling appl_adimap_alltypes.c...
+compiling appl_abcc_handler.c...
+compiling appl_adimap_separate16.c...
+compiling appl_adimap_simple16.c...
+compiling appl_adimap_sync.c...
+compiling appl_adimap_speed_example.c...
+compiling ABCC40_main.c...
+compiling appl_adimap_verif.c...
+compiling RTX_Conf_CM.c...
+compiling LED.c...
+assembling startup_LPC17xx.s...
+compiling GPDMA_LPC17xx.c...
+compiling PIN_LPC17xx.c...
+compiling UART_LPC17xx.c...
+compiling system_LPC17xx.c...
+linking...
+Program Size: Code=146108 RO-data=113488 RW-data=15644 ZI-data=43112  
+FromELF: creating hex file...
+After Build - User command #1: Flash\fromelf_post.bat "c:\Git_Trials\WF3_AOModule-03-may-26\Objects\WF_MOD_1.axf"
+After Build - User command #2: .\Flash\Binary_Encrypt_LPC1768.exe
+
+
+                                                                                   
+
+
+
+                                                                                   
+
+
+
+||------------------ (LPC1768)Binary File Encrypt Utility V1.0------------------||
+
+
+1. Binary File Folder Path --> c:\Git_Trials\WF3_AOModule-03-may-26\Objects\Binary\ER_IROM1
+2. Hex File Path --> c:\Git_Trials\WF3_AOModule-03-may-26\Objects\WF_MOD_1.hex
+3. Binary Encrypt File Path --> c:\Git_Trials\WF3_AOModule-03-may-26\Objects\Binary\binary_encrypt.bin
+4. Binary Encrypt CRC File Path --> c:\Git_Trials\WF3_AOModule-03-may-26\Objects\Binary\eWF_MOD_1.bin
+5. Input file size: 261652 Bytes
+
+6. File length is not a multiple of Block Size!
+7. Total 492 Bytes are padded with zero in input file
+
+
+                                                                                   
+
+     ************** OUTPUT FILE HAS BEEN GENERATED SUCCESSFULLY **************
+
+                                                                                   
+
+
+
+||-------------------------------- E N D -----------------------------------------||
+
+
+
+                                                                                   
+
+
+
+                                                                                   
+
+".\Objects\WF_MOD_1.axf" - 0 Error(s), 198 Warning(s).
+Build Time Elapsed:  00:00:08

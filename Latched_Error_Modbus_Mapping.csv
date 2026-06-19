@@ -1,0 +1,18 @@
+ErrNo,Description,FC04_Register,FC04_Bit,FC04_Reference,FC02_InputBit_Address,FC02_Marker,FC02_Status
+1,DIO Com Error,36,0,Reg36.Bit0,83,M083,Proposed mapping
+2,Modbus Com Error,36,1,Reg36.Bit1,84,M084,Proposed mapping
+3,Tacho Fault,36,2,Reg36.Bit2,85,M085,Proposed mapping
+4,Belt Track Fault,36,3,Reg36.Bit3,86,M086,Proposed mapping
+5,Overload Alarm,36,4,Reg36.Bit4,87,M087,Proposed mapping
+6,Underload Alarm,36,5,Reg36.Bit5,88,M088,Proposed mapping
+7,Loadcell 1 Fault,36,6,Reg36.Bit6,89,M089,Proposed mapping
+8,Drive Fault,36,7,Reg36.Bit7,90,M090,Proposed mapping
+9,Emergency Fault,36,8,Reg36.Bit8,91,M091,Proposed mapping
+10,Deviation Fault,36,9,Reg36.Bit9,92,M092,Proposed mapping
+11,No PLC File,36,10,Reg36.Bit10,93,M093,Proposed mapping
+12,Interlock Fault,36,11,Reg36.Bit11,94,M094,Proposed mapping
+13,ZSS ERROR,36,12,Reg36.Bit12,95,M095,Proposed mapping
+14,Inv1 Com Error,36,13,Reg36.Bit13,96,M096,Proposed mapping
+15,Inv2 Com Error,36,14,Reg36.Bit14,97,M097,Proposed mapping
+16,Loadcell 2 Fault,36,15,Reg36.Bit15,98,M098,Proposed mapping
+17,AO Comm Fail,37,0,Reg37.Bit0,99,M099,Proposed mapping

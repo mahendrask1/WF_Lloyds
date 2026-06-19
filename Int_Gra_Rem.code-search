@@ -1,0 +1,32 @@
+# Query: Int_Gra_Rem
+# Flags: WordMatch
+# Including: *.c,*.h
+# ContextLines: 1
+
+6 results - 2 files
+
+Controls.c:
+   36  #define DeInt_Vol_Dio 13
+   37: #define Int_Gra_Com 14
+   38  #define Int_Vol_Com 15
+
+   55          {
+   56:             MyMode=Int_Gra_Com;   //Remote (modbus command) Interlock Gravimetric Mode
+   57              M052 = 1; // M052 set for gravimetric  mode
+
+  134      if((Operating_Mode==Int_Gra_Dio) || (Operating_Mode==DeInt_Gra_Dio) || 
+  135:     (Operating_Mode==Int_Gra_Com) || (Operating_Mode==DeInt_Gra_Com))
+  136      {
+
+  147      if((Operating_Mode==Int_Gra_Dio) || (Operating_Mode==Int_Vol_Dio) || 
+  148:     (Operating_Mode==Int_Gra_Com) || (Operating_Mode==Int_Vol_Com))
+  149      {
+
+  172  {
+  173:     if((Operating_Mode==Int_Gra_Com) || (Operating_Mode==DeInt_Gra_Com))
+  174      {
+
+keys.h:
+  56  #define DeInt_Vol_Dio 13
+  57: #define Int_Gra_Rem 14
+  58  #define Int_Vol_Rem 15

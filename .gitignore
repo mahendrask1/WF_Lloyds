@@ -1,0 +1,64 @@
+# Keil MDK Build Output
+Objects/
+Flash/
+DebugConfig/
+Listings/
+*.axf
+*.bin
+*.d
+*.crf
+*.dep
+*.hex
+*.htm
+*.lnp
+*.lst
+*.map
+*.o
+*.obj
+*.sct
+*.bak
+*.log
+*.iex
+*.build_log.htm
+
+# Binary and executable files
+*.exe
+
+# User-specific files (settings) - keep only main .uvprojx
+*.uvguix
+*.uvguix.*
+*.uvopt
+# Exclude old dated uvoptx files
+*_11sept_25.uvoptx
+*_21sept_25.uvoptx
+*_28sept_25.uvoptx
+*_301_4_20Solved.uvoptx
+
+# Backup folders and archives
+DELETE/
+Deleted/
+*.zip
+
+# Specific backup folders
+13 oct 28 wf ver208/
+25 aug 2025 wf bkup/
+
+# Conflict files (specific files only)
+menu[Conflict].c
+menu[Conflict 1].c
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE
+.vscode/
+.vs/

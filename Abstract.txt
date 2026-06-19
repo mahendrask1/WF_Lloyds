@@ -1,0 +1,39 @@
+The RTX_Blinky project is a simple RTX Kernel based example
+for the NXP 'LPC1768' microcontroller using Keil 'MCB1700' 
+Evaluation Board, compliant to Cortex Microcontroller 
+Software Interface Standard (CMSIS V2.0).
+
+Example functionality::                                                   
+ - Clock Settings:
+   - XTAL  =  12 MHz
+   - PLL0  = 400 MHz
+   - CCLK  = 100 MHz
+
+The simple RTX Kernel based example uses two RTX tasks
+to blink a LED.
+
+
+The Blinky program is available in different targets:
+
+  LPC1768 Flash: runs from Internal Flash located on chip
+                 (used for production or target debugging)
+
+Test
+/*PF4M Register Address*/
+8448H = Logic Status Data
+8451H = Output Frequency
+8452H = Output Current
+/***************************/
+/*ATV311 Register Address*/
+3201H = Logic Status Data
+3202H = Output Frequency
+3204H = Output Current
+/*-------------------------------------------------------------*/
+Update (2026-01-30):
+Selectable Analog Output (AO) modules are now supported and working with multidrop communication. The system can select and communicate with multiple AO modules. Inverter communication failure error display has been added to notify users of any communication issues with the inverter.
+/*-------------------------------------------------------------*/
+/***************************/
+/*ACS550 Register Address*/
+0004H = Logic Status Data
+0005H = Output Frequency
+0006H = Output Current

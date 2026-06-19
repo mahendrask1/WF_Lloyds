@@ -1,0 +1,7 @@
+Address_Start,Address_End,Function_Code,Access,Type,Tag_Range,Source,Notes
+0,39,"FC01 read / FC05,FC0F write",RW,Coils,M000..M039,ram_values[80..119],Write allowed only here
+40,99,FC02,RO,Discrete Inputs,M040..M099,ram_values[120..179],Marker status bits
+100,149,FC02,RO,Discrete Inputs,RESERVED_GAP_50,N/A,Reserved for future markers
+150,189,FC02,RO,Discrete Inputs,I000..I039,ram_values[0..39],Includes inverter/external DIO mapped inputs
+190,219,FC02,RO,Discrete Inputs,RESERVED_GAP_30,N/A,Reserved between inputs and outputs
+220,259,FC02,RO,Discrete Inputs,O000..O039,ram_values[40..79],Output status as read-only bits

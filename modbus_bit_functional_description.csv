@@ -1,0 +1,103 @@
+Tag,Functional_Description,Value_Semantics
+M000,Start remote command,1=Start command active;0=inactive
+M001,Stop remote command,1=Stop command active;0=inactive
+M002,Remote control source select,1=control via SIO Modbus;0=control via DIO/Keypad
+M003,Reset totaliser1,1=reset request;0=normal
+M004,Free/reserved,No defined function
+M005,Free/reserved,No defined function
+M006,Free/reserved,No defined function
+M007,Mode select Gravimetric/Volumetric,1=Gravimetric;0=Volumetric
+M008,Local/Remote selection,1=Remote(field operated);0=Local(panel)
+M009,Belt tracking input,1=Healthy/OK;0=Fault
+M010,Emergency input health,1=Healthy;0=Error
+M011,Local start WF,1=Start request;0=inactive
+M012,Local stop WF,1=Stop request;0=inactive
+M013,Local start PF,1=Start request;0=inactive
+M014,Local stop PF,1=Stop request;0=inactive
+M015,Interlock mode select,0=Interlock;1=De-Interlock
+M016,Remote Start/Stop command,1=Start;0=Stop
+M017,Downstream interlock,1=Healthy/OK;0=Interlock fault
+M018,Error reset command,1=Reset request;0=inactive
+M019,WF drive healthy status,1=Healthy;0=Fault
+M020,PF drive healthy status,1=Healthy;0=Fault
+M021,Dosing valve forward command (SFF),1=Forward ON;0=OFF
+M022,Dosing valve reverse command (SFF),1=Reverse ON;0=OFF
+M023,Free/reserved,No defined function
+M024,BIN prefeeder start/stop feedback,1=Running/Start feedback;0=Stop/No feedback
+M025,Start control measuring,1=Start measuring;0=inactive
+M026,Stop control measuring,1=Stop measuring;0=inactive
+M027,Accept correction command,1=Accept correction;0=inactive
+M028,Local vibrator ON/OFF,1=ON;0=OFF
+M029,Material detect switch,1=Material detected;0=Not detected
+M030,Reserved,No defined function
+M031,Reserved,No defined function
+M032,Reserved,No defined function
+M033,Reserved,No defined function
+M034,Reserved,No defined function
+M035,Reserved,No defined function
+M036,Reserved,No defined function
+M037,Reserved,No defined function
+M038,Reserved,No defined function
+M039,Reserved,No defined function
+M040,Tacho fault marker,1=Fault active;0=No fault
+M041,Belt tracking fault marker,1=Fault active;0=No fault
+M042,WF drive fault marker,1=Fault active;0=No fault
+M043,Deviation fault marker,1=Fault active;0=No fault
+M044,General fault marker,1=Fault active;0=No fault
+M045,PF drive fault marker,1=Fault active;0=No fault
+M046,Reserved/fault marker,Project specific
+M047,Reserved/fault marker,Project specific
+M048,Reserved,No defined function
+M049,Reserved,No defined function
+M050,Reserved,No defined function
+M051,Local mode status,1=Local;0=Remote
+M052,Gravimetric mode status,1=Gravimetric;0=Volumetric
+M053,Interlock status,1=Interlocked;0=De-Interlocked
+M054,Reserved,No defined function
+M055,Reserved,No defined function
+M056,Load limit1 alarm marker,1=Active;0=Inactive
+M057,Load limit2 alarm marker,1=Active;0=Inactive
+M058,Overload alarm marker,1=Active;0=Inactive
+M059,Underload alarm marker,1=Active;0=Inactive
+M060,Loadcell 1 fault marker,1=Fault active;0=No fault
+M061,DIO card communication fault marker,1=Fault active;0=No fault
+M062,Loadcell 2 fault marker,1=Fault active;0=No fault
+M063,Reserved,No defined function
+M064,WF start/stop/fault composite status,Project specific encoded status
+M065,PF start/stop/fault composite status,Project specific encoded status
+M066,WF start/stop status,1=Start;0=Stop
+M067,PF start/stop status,1=Start;0=Stop
+M068,System healthy marker,1=Healthy;0=Fault
+M069,Vibrator ON status,1=ON;0=OFF
+M070,Reserved,No defined function
+M071,Reserved,No defined function
+M072,Reserved,No defined function
+M073,Reserved,No defined function
+M074,Reserved,No defined function
+M075,Reserved,No defined function
+M076,Reserved,No defined function
+M077,Reserved,No defined function
+M078,Reserved,No defined function
+M079,Reserved,No defined function
+M080,Reserved,No defined function
+M081,Reserved,No defined function
+M082,Reserved,No defined function
+M083,Reserved,No defined function
+M084,Reserved,No defined function
+M085,Reserved,No defined function
+M086,Reserved,No defined function
+M087,Reserved,No defined function
+M088,Reserved,No defined function
+M089,Reserved,No defined function
+M090,Reserved,No defined function
+M091,Reserved,No defined function
+M092,Reserved,No defined function
+M093,Reserved,No defined function
+M094,Reserved,No defined function
+M095,Reserved,No defined function
+M096,Reserved,No defined function
+M097,Reserved,No defined function
+M098,Reserved,No defined function
+M099,Reserved,No defined function
+I000..I039,Digital input bits (including inverter/external DIO mapped input statuses),1=ON/active;0=OFF/inactive
+O000..O039,Digital output status bits,1=ON/active;0=OFF/inactive

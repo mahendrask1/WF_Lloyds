@@ -1,0 +1,60 @@
+Register_Address,Function_Code,Access,Data_Source_High_Byte,Data_Source_Low_Byte,Functional_Description,Notes
+0,FC03,RW,modarray_wr[0],modarray_wr[1],Common setpoint command,Holding register 0; linked to Common_Setpoint
+1,FC03,RW,modarray_wr[2],modarray_wr[3],Generic holding register,Holding register
+2,FC03,RW,modarray_wr[4],modarray_wr[5],Generic holding register,Holding register
+3,FC03,RW,modarray_wr[6],modarray_wr[7],Generic holding register,Holding register
+4,FC03,RW,modarray_wr[8],modarray_wr[9],Holding register
+5,FC03,RW,modarray_wr[10],modarray_wr[11],Holding register
+6,FC03,RW,modarray_wr[12],modarray_wr[13],Holding register
+7,FC03,RW,modarray_wr[14],modarray_wr[15],Holding register
+8,FC03,RW,modarray_wr[16],modarray_wr[17],Holding register
+9,FC03,RW,modarray_wr[18],modarray_wr[19],Holding register
+10,FC03,RW,modarray_wr[20],modarray_wr[21],Holding register
+11,FC03,RW,modarray_wr[22],modarray_wr[23],Holding register
+12,FC03,RW,modarray_wr[24],modarray_wr[25],Holding register
+13,FC03,RW,modarray_wr[26],modarray_wr[27],Holding register
+14,FC03,RW,modarray_wr[28],modarray_wr[29],Holding register
+15,FC03,RW,modarray_wr[30],modarray_wr[31],Holding register
+16,FC03,RW,modarray_wr[32],modarray_wr[33],Holding register
+17,FC03,RW,modarray_wr[34],modarray_wr[35],Holding register
+18,FC03,RW,modarray_wr[36],modarray_wr[37],Holding register
+19,FC03,RW,modarray_wr[38],modarray_wr[39],Holding register
+20,FC03,RW,modarray_wr[40],modarray_wr[41],Holding register
+21,FC03,RW,modarray_wr[42],modarray_wr[43],Holding register
+22,FC03,RW,modarray_wr[44],modarray_wr[45],Holding register
+23,FC03,RW,modarray_wr[46],modarray_wr[47],Holding register
+24,FC03,RW,modarray_wr[48],modarray_wr[49],Holding register
+0,FC04,RO,modarray_rd[0]=I000..I007 bits,modarray_rd[1]=I008..I015 bits,Input register packed bits
+1,FC04,RO,modarray_rd[2]=I016..I023 bits,modarray_rd[3]=I024..I031 bits,Input register packed bits
+2,FC04,RO,modarray_rd[4]=I032..I039 bits,modarray_rd[5]=UNASSIGNED,Low byte currently not assigned in code
+3,FC04,RO,modarray_rd[6]=O000..O007 bits,modarray_rd[7]=O008..O015 bits,Output packed bits
+4,FC04,RO,modarray_rd[8]=O016..O023 bits,modarray_rd[9]=O024..O031 bits,Output packed bits
+5,FC04,RO,modarray_rd[10]=M000..M007 bits,modarray_rd[11]=M008..M015 bits,Marker packed bits
+6,FC04,RO,modarray_rd[12]=M016..M023 bits,modarray_rd[13]=M024..M031 bits,Marker packed bits
+7,FC04,RO,modarray_rd[14]=M032..M039 bits,modarray_rd[15]=M040..M047 bits,Marker packed bits
+8,FC04,RO,modarray_rd[16]=M048..M055 bits,modarray_rd[17]=M056..M063 bits,Marker packed bits
+9,FC04,RO,modarray_rd[18]=M064..M071 bits,modarray_rd[19]=M072..M079 bits,Marker packed bits
+10,FC04,RO,modarray_rd[20]=M080..M087 bits,modarray_rd[21]=M088..M095 bits,Marker packed bits
+11,FC04,RO,modarray_rd[22]=Actual_Feedrate_H,modarray_rd[23]=Actual_Feedrate_L,Actual feed rate
+12,FC04,RO,modarray_rd[24]=Totaliser1_B3,modarray_rd[25]=Totaliser1_B2,Totaliser1 upper word
+13,FC04,RO,modarray_rd[26]=Totaliser1_B1,modarray_rd[27]=Totaliser1_B0,Totaliser1 lower word
+14,FC04,RO,modarray_rd[28]=Totaliser2_B3,modarray_rd[29]=Totaliser2_B2,Totaliser2 upper word
+15,FC04,RO,modarray_rd[30]=Totaliser2_B1,modarray_rd[31]=Totaliser2_B0,Totaliser2 lower word
+16,FC04,RO,modarray_rd[32]=Deviation_H,modarray_rd[33]=Deviation_L,Signed deviation (two's complement when negative)
+17,FC04,RO,modarray_rd[34]=Current_Setpoint_H,modarray_rd[35]=Current_Setpoint_L,Current setpoint
+18,FC04,RO,modarray_rd[36]=Belt_Load_H_with_sign,modarray_rd[37]=Belt_Load_L,Signed belt load
+19,FC04,RO,modarray_rd[38]=Belt_Speed_H,modarray_rd[39]=Belt_Speed_L,Belt speed
+20,FC04,RO,modarray_rd[40]=WF_Drive_Setpoint_per_H,modarray_rd[41]=WF_Drive_Setpoint_per_L,WF drive setpoint %
+21,FC04,RO,modarray_rd[42]=PF_Drive_Setpoint_Per_H,modarray_rd[43]=PF_Drive_Setpoint_Per_L,PF drive setpoint %
+22,FC04,RO,modarray_rd[44]=Hopper_val_B2,modarray_rd[45]=Hopper_val_B1,Hopper value (upper bytes)
+23,FC04,RO,modarray_rd[46]=Hopper_val_B0,modarray_rd[47]=Gate_Postion_H,Cross-packed register
+24,FC04,RO,modarray_rd[48]=Gate_Postion_L,modarray_rd[49]=HOpper_total_B2,Cross-packed register
+25,FC04,RO,modarray_rd[50]=HOpper_total_B1,modarray_rd[51]=HOpper_total_B0,Hopper total lower bytes
+26,FC04,RO,modarray_rd[52]=FDR_Total_B2,modarray_rd[53]=FDR_Total_B1,Feeder total upper bytes
+27,FC04,RO,modarray_rd[54]=FDR_Total_B0,modarray_rd[55]=CM_Difference_H,Cross-packed register
+28,FC04,RO,modarray_rd[56]=CM_Difference_L,modarray_rd[57]=CM_Display_H,Cross-packed register
+29,FC04,RO,modarray_rd[58]=CM_Display_L,modarray_rd[59]=Inv_Op_Freq_H,Cross-packed register
+30,FC04,RO,modarray_rd[60]=Inv_Op_Freq_L,modarray_rd[61]=Inv_Op_current_H,Cross-packed register
+31,FC04,RO,modarray_rd[62]=Inv_Op_current_L,modarray_rd[63]=Inv1_Op_Freq_H,Cross-packed register
+32,FC04,RO,modarray_rd[64]=Inv1_Op_Freq_L,modarray_rd[65]=Inv1_Op_current_H,Cross-packed register
+33,FC04,RO,modarray_rd[66]=Inv1_Op_current_L,modarray_rd[67]=UNASSIGNED,Low byte currently not assigned in code
