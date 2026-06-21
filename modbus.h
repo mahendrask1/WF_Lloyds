@@ -18,4 +18,11 @@ void UART_MODBUS_CONFIG(void);
 #define MAX_LENGTH  100
 //#define MAX_LENGTH  120
 
+/* SIO Modbus (UART3) — must match modbus.c allocation */
+#define MODBUS_TX_BUF_SIZE  60
+#define MODBUS_PDU_DATA_MAX 28   /* ModData[] size minus FC header copy margin */
+
+/* DIO / VFD / AO Modbus (UART0) — must match Modbus_DIO.c allocation */
+#define DIO_MODBUS_MSG_SIZE 34
+
 #endif

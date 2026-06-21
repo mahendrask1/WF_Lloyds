@@ -1,0 +1,261 @@
+Bit_Address,Function_Code,Access,Type,Tag,Notes
+0,FC01/FC05/FC0F,RW,Coil,M000,Marker coil (write allowed)
+1,FC01/FC05/FC0F,RW,Coil,M001,Marker coil (write allowed)
+2,FC01/FC05/FC0F,RW,Coil,M002,Marker coil (write allowed)
+3,FC01/FC05/FC0F,RW,Coil,M003,Marker coil (write allowed)
+4,FC01/FC05/FC0F,RW,Coil,M004,Marker coil (write allowed)
+5,FC01/FC05/FC0F,RW,Coil,M005,Marker coil (write allowed)
+6,FC01/FC05/FC0F,RW,Coil,M006,Marker coil (write allowed)
+7,FC01/FC05/FC0F,RW,Coil,M007,Marker coil (write allowed)
+8,FC01/FC05/FC0F,RW,Coil,M008,Marker coil (write allowed)
+9,FC01/FC05/FC0F,RW,Coil,M009,Marker coil (write allowed)
+10,FC01/FC05/FC0F,RW,Coil,M010,Marker coil (write allowed)
+11,FC01/FC05/FC0F,RW,Coil,M011,Marker coil (write allowed)
+12,FC01/FC05/FC0F,RW,Coil,M012,Marker coil (write allowed)
+13,FC01/FC05/FC0F,RW,Coil,M013,Marker coil (write allowed)
+14,FC01/FC05/FC0F,RW,Coil,M014,Marker coil (write allowed)
+15,FC01/FC05/FC0F,RW,Coil,M015,Marker coil (write allowed)
+16,FC01/FC05/FC0F,RW,Coil,M016,Marker coil (write allowed)
+17,FC01/FC05/FC0F,RW,Coil,M017,Marker coil (write allowed)
+18,FC01/FC05/FC0F,RW,Coil,M018,Marker coil (write allowed)
+19,FC01/FC05/FC0F,RW,Coil,M019,Marker coil (write allowed)
+20,FC01/FC05/FC0F,RW,Coil,M020,Marker coil (write allowed)
+21,FC01/FC05/FC0F,RW,Coil,M021,Marker coil (write allowed)
+22,FC01/FC05/FC0F,RW,Coil,M022,Marker coil (write allowed)
+23,FC01/FC05/FC0F,RW,Coil,M023,Marker coil (write allowed)
+24,FC01/FC05/FC0F,RW,Coil,M024,Marker coil (write allowed)
+25,FC01/FC05/FC0F,RW,Coil,M025,Marker coil (write allowed)
+26,FC01/FC05/FC0F,RW,Coil,M026,Marker coil (write allowed)
+27,FC01/FC05/FC0F,RW,Coil,M027,Marker coil (write allowed)
+28,FC01/FC05/FC0F,RW,Coil,M028,Marker coil (write allowed)
+29,FC01/FC05/FC0F,RW,Coil,M029,Marker coil (write allowed)
+30,FC01/FC05/FC0F,RW,Coil,M030,Marker coil (write allowed)
+31,FC01/FC05/FC0F,RW,Coil,M031,Marker coil (write allowed)
+32,FC01/FC05/FC0F,RW,Coil,M032,Marker coil (write allowed)
+33,FC01/FC05/FC0F,RW,Coil,M033,Marker coil (write allowed)
+34,FC01/FC05/FC0F,RW,Coil,M034,Marker coil (write allowed)
+35,FC01/FC05/FC0F,RW,Coil,M035,Marker coil (write allowed)
+36,FC01/FC05/FC0F,RW,Coil,M036,Marker coil (write allowed)
+37,FC01/FC05/FC0F,RW,Coil,M037,Marker coil (write allowed)
+38,FC01/FC05/FC0F,RW,Coil,M038,Marker coil (write allowed)
+39,FC01/FC05/FC0F,RW,Coil,M039,Marker coil (write allowed)
+40,FC02,RO,DiscreteInput,M040,Marker discrete input
+41,FC02,RO,DiscreteInput,M041,Marker discrete input
+42,FC02,RO,DiscreteInput,M042,Marker discrete input
+43,FC02,RO,DiscreteInput,M043,Marker discrete input
+44,FC02,RO,DiscreteInput,M044,Marker discrete input
+45,FC02,RO,DiscreteInput,M045,Marker discrete input
+46,FC02,RO,DiscreteInput,M046,Marker discrete input
+47,FC02,RO,DiscreteInput,M047,Marker discrete input
+48,FC02,RO,DiscreteInput,M048,Marker discrete input
+49,FC02,RO,DiscreteInput,M049,Marker discrete input
+50,FC02,RO,DiscreteInput,M050,Marker discrete input
+51,FC02,RO,DiscreteInput,M051,Marker discrete input
+52,FC02,RO,DiscreteInput,M052,Marker discrete input
+53,FC02,RO,DiscreteInput,M053,Marker discrete input
+54,FC02,RO,DiscreteInput,M054,Marker discrete input
+55,FC02,RO,DiscreteInput,M055,Marker discrete input
+56,FC02,RO,DiscreteInput,M056,Marker discrete input
+57,FC02,RO,DiscreteInput,M057,Marker discrete input
+58,FC02,RO,DiscreteInput,M058,Marker discrete input
+59,FC02,RO,DiscreteInput,M059,Marker discrete input
+60,FC02,RO,DiscreteInput,M060,Marker discrete input
+61,FC02,RO,DiscreteInput,M061,Marker discrete input
+62,FC02,RO,DiscreteInput,M062,Marker discrete input
+63,FC02,RO,DiscreteInput,M063,Marker discrete input
+64,FC02,RO,DiscreteInput,M064,Marker discrete input
+65,FC02,RO,DiscreteInput,M065,Marker discrete input
+66,FC02,RO,DiscreteInput,M066,Marker discrete input
+67,FC02,RO,DiscreteInput,M067,Marker discrete input
+68,FC02,RO,DiscreteInput,M068,Marker discrete input
+69,FC02,RO,DiscreteInput,M069,Marker discrete input
+70,FC02,RO,DiscreteInput,M070,Marker discrete input
+71,FC02,RO,DiscreteInput,M071,Marker discrete input
+72,FC02,RO,DiscreteInput,M072,Marker discrete input
+73,FC02,RO,DiscreteInput,M073,Marker discrete input
+74,FC02,RO,DiscreteInput,M074,Marker discrete input
+75,FC02,RO,DiscreteInput,M075,Marker discrete input
+76,FC02,RO,DiscreteInput,M076,Marker discrete input
+77,FC02,RO,DiscreteInput,M077,Marker discrete input
+78,FC02,RO,DiscreteInput,M078,Marker discrete input
+79,FC02,RO,DiscreteInput,M079,Marker discrete input
+80,FC02,RO,DiscreteInput,M080,Marker discrete input
+81,FC02,RO,DiscreteInput,M081,Marker discrete input
+82,FC02,RO,DiscreteInput,M082,Marker discrete input
+83,FC02,RO,DiscreteInput,M083,Marker discrete input
+84,FC02,RO,DiscreteInput,M084,Marker discrete input
+85,FC02,RO,DiscreteInput,M085,Marker discrete input
+86,FC02,RO,DiscreteInput,M086,Marker discrete input
+87,FC02,RO,DiscreteInput,M087,Marker discrete input
+88,FC02,RO,DiscreteInput,M088,Marker discrete input
+89,FC02,RO,DiscreteInput,M089,Marker discrete input
+90,FC02,RO,DiscreteInput,M090,Marker discrete input
+91,FC02,RO,DiscreteInput,M091,Marker discrete input
+92,FC02,RO,DiscreteInput,M092,Marker discrete input
+93,FC02,RO,DiscreteInput,M093,Marker discrete input
+94,FC02,RO,DiscreteInput,M094,Marker discrete input
+95,FC02,RO,DiscreteInput,M095,Marker discrete input
+96,FC02,RO,DiscreteInput,M096,Marker discrete input
+97,FC02,RO,DiscreteInput,M097,Marker discrete input
+98,FC02,RO,DiscreteInput,M098,Marker discrete input
+99,FC02,RO,DiscreteInput,M099,Marker discrete input
+100,FC02,RO,Reserved,RESERVED_100,Gap reserved for future markers
+101,FC02,RO,Reserved,RESERVED_101,Gap reserved for future markers
+102,FC02,RO,Reserved,RESERVED_102,Gap reserved for future markers
+103,FC02,RO,Reserved,RESERVED_103,Gap reserved for future markers
+104,FC02,RO,Reserved,RESERVED_104,Gap reserved for future markers
+105,FC02,RO,Reserved,RESERVED_105,Gap reserved for future markers
+106,FC02,RO,Reserved,RESERVED_106,Gap reserved for future markers
+107,FC02,RO,Reserved,RESERVED_107,Gap reserved for future markers
+108,FC02,RO,Reserved,RESERVED_108,Gap reserved for future markers
+109,FC02,RO,Reserved,RESERVED_109,Gap reserved for future markers
+110,FC02,RO,Reserved,RESERVED_110,Gap reserved for future markers
+111,FC02,RO,Reserved,RESERVED_111,Gap reserved for future markers
+112,FC02,RO,Reserved,RESERVED_112,Gap reserved for future markers
+113,FC02,RO,Reserved,RESERVED_113,Gap reserved for future markers
+114,FC02,RO,Reserved,RESERVED_114,Gap reserved for future markers
+115,FC02,RO,Reserved,RESERVED_115,Gap reserved for future markers
+116,FC02,RO,Reserved,RESERVED_116,Gap reserved for future markers
+117,FC02,RO,Reserved,RESERVED_117,Gap reserved for future markers
+118,FC02,RO,Reserved,RESERVED_118,Gap reserved for future markers
+119,FC02,RO,Reserved,RESERVED_119,Gap reserved for future markers
+120,FC02,RO,Reserved,RESERVED_120,Gap reserved for future markers
+121,FC02,RO,Reserved,RESERVED_121,Gap reserved for future markers
+122,FC02,RO,Reserved,RESERVED_122,Gap reserved for future markers
+123,FC02,RO,Reserved,RESERVED_123,Gap reserved for future markers
+124,FC02,RO,Reserved,RESERVED_124,Gap reserved for future markers
+125,FC02,RO,Reserved,RESERVED_125,Gap reserved for future markers
+126,FC02,RO,Reserved,RESERVED_126,Gap reserved for future markers
+127,FC02,RO,Reserved,RESERVED_127,Gap reserved for future markers
+128,FC02,RO,Reserved,RESERVED_128,Gap reserved for future markers
+129,FC02,RO,Reserved,RESERVED_129,Gap reserved for future markers
+130,FC02,RO,Reserved,RESERVED_130,Gap reserved for future markers
+131,FC02,RO,Reserved,RESERVED_131,Gap reserved for future markers
+132,FC02,RO,Reserved,RESERVED_132,Gap reserved for future markers
+133,FC02,RO,Reserved,RESERVED_133,Gap reserved for future markers
+134,FC02,RO,Reserved,RESERVED_134,Gap reserved for future markers
+135,FC02,RO,Reserved,RESERVED_135,Gap reserved for future markers
+136,FC02,RO,Reserved,RESERVED_136,Gap reserved for future markers
+137,FC02,RO,Reserved,RESERVED_137,Gap reserved for future markers
+138,FC02,RO,Reserved,RESERVED_138,Gap reserved for future markers
+139,FC02,RO,Reserved,RESERVED_139,Gap reserved for future markers
+140,FC02,RO,Reserved,RESERVED_140,Gap reserved for future markers
+141,FC02,RO,Reserved,RESERVED_141,Gap reserved for future markers
+142,FC02,RO,Reserved,RESERVED_142,Gap reserved for future markers
+143,FC02,RO,Reserved,RESERVED_143,Gap reserved for future markers
+144,FC02,RO,Reserved,RESERVED_144,Gap reserved for future markers
+145,FC02,RO,Reserved,RESERVED_145,Gap reserved for future markers
+146,FC02,RO,Reserved,RESERVED_146,Gap reserved for future markers
+147,FC02,RO,Reserved,RESERVED_147,Gap reserved for future markers
+148,FC02,RO,Reserved,RESERVED_148,Gap reserved for future markers
+149,FC02,RO,Reserved,RESERVED_149,Gap reserved for future markers
+150,FC02,RO,DiscreteInput,I000,Digital input bit
+151,FC02,RO,DiscreteInput,I001,Digital input bit
+152,FC02,RO,DiscreteInput,I002,Digital input bit
+153,FC02,RO,DiscreteInput,I003,Digital input bit
+154,FC02,RO,DiscreteInput,I004,Digital input bit
+155,FC02,RO,DiscreteInput,I005,Digital input bit
+156,FC02,RO,DiscreteInput,I006,Digital input bit
+157,FC02,RO,DiscreteInput,I007,Digital input bit
+158,FC02,RO,DiscreteInput,I008,Digital input bit
+159,FC02,RO,DiscreteInput,I009,Digital input bit
+160,FC02,RO,DiscreteInput,I010,Digital input bit
+161,FC02,RO,DiscreteInput,I011,Digital input bit
+162,FC02,RO,DiscreteInput,I012,Digital input bit
+163,FC02,RO,DiscreteInput,I013,Digital input bit
+164,FC02,RO,DiscreteInput,I014,Digital input bit
+165,FC02,RO,DiscreteInput,I015,Digital input bit
+166,FC02,RO,DiscreteInput,I016,Digital input bit
+167,FC02,RO,DiscreteInput,I017,Digital input bit
+168,FC02,RO,DiscreteInput,I018,Digital input bit
+169,FC02,RO,DiscreteInput,I019,Digital input bit
+170,FC02,RO,DiscreteInput,I020,Digital input bit
+171,FC02,RO,DiscreteInput,I021,Digital input bit
+172,FC02,RO,DiscreteInput,I022,Digital input bit
+173,FC02,RO,DiscreteInput,I023,Digital input bit
+174,FC02,RO,DiscreteInput,I024,Digital input bit (inverter/external signals may map here)
+175,FC02,RO,DiscreteInput,I025,Digital input bit (inverter/external signals may map here)
+176,FC02,RO,DiscreteInput,I026,Digital input bit (inverter/external signals may map here)
+177,FC02,RO,DiscreteInput,I027,Digital input bit (inverter/external signals may map here)
+178,FC02,RO,DiscreteInput,I028,Digital input bit (inverter/external signals may map here)
+179,FC02,RO,DiscreteInput,I029,Digital input bit (inverter/external signals may map here)
+180,FC02,RO,DiscreteInput,I030,Digital input bit (inverter/external signals may map here)
+181,FC02,RO,DiscreteInput,I031,Digital input bit (inverter/external signals may map here)
+182,FC02,RO,DiscreteInput,I032,Digital input bit (inverter/external signals may map here)
+183,FC02,RO,DiscreteInput,I033,Digital input bit (inverter/external signals may map here)
+184,FC02,RO,DiscreteInput,I034,Digital input bit (inverter/external signals may map here)
+185,FC02,RO,DiscreteInput,I035,Digital input bit (inverter/external signals may map here)
+186,FC02,RO,DiscreteInput,I036,Digital input bit (inverter/external signals may map here)
+187,FC02,RO,DiscreteInput,I037,Digital input bit (inverter/external signals may map here)
+188,FC02,RO,DiscreteInput,I038,Digital input bit
+189,FC02,RO,DiscreteInput,I039,Digital input bit
+190,FC02,RO,Reserved,RESERVED_190,Gap reserved between inputs and outputs
+191,FC02,RO,Reserved,RESERVED_191,Gap reserved between inputs and outputs
+192,FC02,RO,Reserved,RESERVED_192,Gap reserved between inputs and outputs
+193,FC02,RO,Reserved,RESERVED_193,Gap reserved between inputs and outputs
+194,FC02,RO,Reserved,RESERVED_194,Gap reserved between inputs and outputs
+195,FC02,RO,Reserved,RESERVED_195,Gap reserved between inputs and outputs
+196,FC02,RO,Reserved,RESERVED_196,Gap reserved between inputs and outputs
+197,FC02,RO,Reserved,RESERVED_197,Gap reserved between inputs and outputs
+198,FC02,RO,Reserved,RESERVED_198,Gap reserved between inputs and outputs
+199,FC02,RO,Reserved,RESERVED_199,Gap reserved between inputs and outputs
+200,FC02,RO,Reserved,RESERVED_200,Gap reserved between inputs and outputs
+201,FC02,RO,Reserved,RESERVED_201,Gap reserved between inputs and outputs
+202,FC02,RO,Reserved,RESERVED_202,Gap reserved between inputs and outputs
+203,FC02,RO,Reserved,RESERVED_203,Gap reserved between inputs and outputs
+204,FC02,RO,Reserved,RESERVED_204,Gap reserved between inputs and outputs
+205,FC02,RO,Reserved,RESERVED_205,Gap reserved between inputs and outputs
+206,FC02,RO,Reserved,RESERVED_206,Gap reserved between inputs and outputs
+207,FC02,RO,Reserved,RESERVED_207,Gap reserved between inputs and outputs
+208,FC02,RO,Reserved,RESERVED_208,Gap reserved between inputs and outputs
+209,FC02,RO,Reserved,RESERVED_209,Gap reserved between inputs and outputs
+210,FC02,RO,Reserved,RESERVED_210,Gap reserved between inputs and outputs
+211,FC02,RO,Reserved,RESERVED_211,Gap reserved between inputs and outputs
+212,FC02,RO,Reserved,RESERVED_212,Gap reserved between inputs and outputs
+213,FC02,RO,Reserved,RESERVED_213,Gap reserved between inputs and outputs
+214,FC02,RO,Reserved,RESERVED_214,Gap reserved between inputs and outputs
+215,FC02,RO,Reserved,RESERVED_215,Gap reserved between inputs and outputs
+216,FC02,RO,Reserved,RESERVED_216,Gap reserved between inputs and outputs
+217,FC02,RO,Reserved,RESERVED_217,Gap reserved between inputs and outputs
+218,FC02,RO,Reserved,RESERVED_218,Gap reserved between inputs and outputs
+219,FC02,RO,Reserved,RESERVED_219,Gap reserved between inputs and outputs
+220,FC02,RO,DiscreteInput,O000,Digital output status bit (read-only)
+221,FC02,RO,DiscreteInput,O001,Digital output status bit (read-only)
+222,FC02,RO,DiscreteInput,O002,Digital output status bit (read-only)
+223,FC02,RO,DiscreteInput,O003,Digital output status bit (read-only)
+224,FC02,RO,DiscreteInput,O004,Digital output status bit (read-only)
+225,FC02,RO,DiscreteInput,O005,Digital output status bit (read-only)
+226,FC02,RO,DiscreteInput,O006,Digital output status bit (read-only)
+227,FC02,RO,DiscreteInput,O007,Digital output status bit (read-only)
+228,FC02,RO,DiscreteInput,O008,Digital output status bit (read-only)
+229,FC02,RO,DiscreteInput,O009,Digital output status bit (read-only)
+230,FC02,RO,DiscreteInput,O010,Digital output status bit (read-only)
+231,FC02,RO,DiscreteInput,O011,Digital output status bit (read-only)
+232,FC02,RO,DiscreteInput,O012,Digital output status bit (read-only)
+233,FC02,RO,DiscreteInput,O013,Digital output status bit (read-only)
+234,FC02,RO,DiscreteInput,O014,Digital output status bit (read-only)
+235,FC02,RO,DiscreteInput,O015,Digital output status bit (read-only)
+236,FC02,RO,DiscreteInput,O016,Digital output status bit (read-only)
+237,FC02,RO,DiscreteInput,O017,Digital output status bit (read-only)
+238,FC02,RO,DiscreteInput,O018,Digital output status bit (read-only)
+239,FC02,RO,DiscreteInput,O019,Digital output status bit (read-only)
+240,FC02,RO,DiscreteInput,O020,Digital output status bit (read-only)
+241,FC02,RO,DiscreteInput,O021,Digital output status bit (read-only)
+242,FC02,RO,DiscreteInput,O022,Digital output status bit (read-only)
+243,FC02,RO,DiscreteInput,O023,Digital output status bit (read-only)
+244,FC02,RO,DiscreteInput,O024,Digital output status bit (read-only)
+245,FC02,RO,DiscreteInput,O025,Digital output status bit (read-only)
+246,FC02,RO,DiscreteInput,O026,Digital output status bit (read-only)
+247,FC02,RO,DiscreteInput,O027,Digital output status bit (read-only)
+248,FC02,RO,DiscreteInput,O028,Digital output status bit (read-only)
+249,FC02,RO,DiscreteInput,O029,Digital output status bit (read-only)
+250,FC02,RO,DiscreteInput,O030,Digital output status bit (read-only)
+251,FC02,RO,DiscreteInput,O031,Digital output status bit (read-only)
+252,FC02,RO,DiscreteInput,O032,Digital output status bit (read-only)
+253,FC02,RO,DiscreteInput,O033,Digital output status bit (read-only)
+254,FC02,RO,DiscreteInput,O034,Digital output status bit (read-only)
+255,FC02,RO,DiscreteInput,O035,Digital output status bit (read-only)
+256,FC02,RO,DiscreteInput,O036,Digital output status bit (read-only)
+257,FC02,RO,DiscreteInput,O037,Digital output status bit (read-only)
+258,FC02,RO,DiscreteInput,O038,Digital output status bit (read-only)
+259,FC02,RO,DiscreteInput,O039,Digital output status bit (read-only)

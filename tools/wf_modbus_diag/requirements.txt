@@ -1,0 +1,2 @@
+# Optional on Windows — built-in ctypes serial is used instead.
+# pyserial>=3.5

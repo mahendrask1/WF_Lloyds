@@ -96,27 +96,8 @@ void Digital_Input_Action()
 
     if (M018 == 1) // Fault ack_i/p
     {
-        Error_No = 0;
-        M056 = 0; // Limit1
-        M057 = 0; // Limit2
-        M058 = 0; // Overload Alarm
-        M059 = 0; // Underload Alarm
-        M060 = 0; // Loadcell Fault
-        M040 = 0; // Tacho Fault
-        M041 = 0; // Belt Tracking
-        M042 = 0; // Reset WF Drive Fault
-        M043 = 0; // Deviation Fault
-        M044 = 0; // General Fault
-        M045 = 0; // PF Drive Fault Marker
-        // M009 = 0;  //Belt track Fault
-        M009 = 1; // Belt track Fault. msk marker reversal 31-aug-25
-        // M017 = 0;  //Interlock Fault
-        M017 = 1; // Interlock Fault. msk marker reversal 31-aug-25
-        M010 = 1; // Emergency Fault if M010 = 0
-        M019 = 1; // WF Drive Fault  if M019 = 0
-        M020 = 1; // PF Drive Fault  if M020 = 0
-        M077 = 0; // ACAL Abort clear
-        M046 = 0; // ZSS faulr Marker
+        ApplyFaultResetMarkers();
+        M018 = 0;
     }
 
     // if(Error_No ==0) //general fault reset if no error

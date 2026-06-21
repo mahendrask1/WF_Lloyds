@@ -207,17 +207,23 @@ void PF_Drive_Setpoint_Cal()
 //-------------------------------------------------
 
 //-------------------------------------------------
-void Calculate_Setpoint_Display()
+void Update_External_Setpoint(void)
 {
-    //if (Mode_Status == Local)
     if (AI_avg > AI_calb_val[0])
     {
-        External_Setpoint = ((unsigned int)((float)(AI_avg - AI_calb_val[0]) * Capacity) / (AI_calb_val[1] - AI_calb_val[0]));
+        External_Setpoint = ((unsigned int)((float)(AI_avg - AI_calb_val[0]) * Capacity)
+            / (AI_calb_val[1] - AI_calb_val[0]));
     }
     else
     {
         External_Setpoint = 0;
     }
+}
+
+//-------------------------------------------------
+void Calculate_Setpoint_Display()
+{
+    Update_External_Setpoint();
     if (GetFieldMode())
     {
         Current_Setpoint = 0;

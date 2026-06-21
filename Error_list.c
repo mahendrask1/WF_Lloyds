@@ -94,7 +94,7 @@ const char *error_msg[18][20] = {
 #define ERROR_ROTATE_SCANS 400U /* 2s at 200 scans/sec */
 
 static unsigned char error_latch[18];
-static unsigned char error_display_index = ERROR_MIN_CODE;
+static unsigned char error_display_index = 0;
 static uint16_t error_rotate_elapsed_scans = 0;
 static uint16_t error_rotate_last_scan = 0;
 
@@ -147,6 +147,8 @@ static void ErrorLatch_Collect(void)
         ErrorLatch_Add(8);
     if (M010 == 0)
         ErrorLatch_Add(9);
+    else
+        error_latch[9] = 0;
     if (M043 == 1)
         ErrorLatch_Add(10);
     if ((M017 == 0) && (!GetFieldMode()))
@@ -192,17 +194,18 @@ static void ErrorLatch_UpdateDisplay(void)
     if (any_latched == 0)
     {
         Error_No = 0;
-        error_display_index = ERROR_MIN_CODE;
+        error_display_index = 0;
         error_rotate_elapsed_scans = 0;
         return;
     }
 
-    if (error_latch[error_display_index] == 0)
+    if ((error_display_index == 0) || (error_latch[error_display_index] == 0))
     {
         unsigned char first = ErrorLatch_FindNext(error_display_index);
         if (first == 0)
         {
             Error_No = 0;
+            error_display_index = 0;
             return;
         }
         error_display_index = first;
@@ -235,10 +238,10 @@ static void ErrorLine_Refresh(void)
 
     if (ACAL_Status == 0)
     {
-        if ((M077 == 1) && (error_display_index == 0) && (Pre_Hopper == 1))
+        if ((M077 == 1) && (Error_No == 0) && (Pre_Hopper == 1))
             Print_String2(ACAL_Display[3], line6, 0, font10, 0);
         else
-            Print_String2(error_msg[error_display_index], line6, 0, font10, 0);
+            Print_String2(error_msg[(unsigned char)Error_No], line6, 0, font10, 0);
     }
 }
 
@@ -247,7 +250,7 @@ void ErrorLatch_ClearAll(void)
     unsigned char i;
     for (i = 0; i < 18; i++)
         error_latch[i] = 0;
-    error_display_index = ERROR_MIN_CODE;
+    error_display_index = 0;
     error_rotate_elapsed_scans = 0;
     error_rotate_last_scan = scan_count;
     Modbus_Comm_Fault = 0;
@@ -264,7 +267,10 @@ void ErrorLatch_ClearInvComm(void)
     {
         unsigned char next = ErrorLatch_FindNext(ERROR_MIN_CODE);
         if (next == 0)
+        {
             Error_No = 0;
+            error_display_index = 0;
+        }
         else
         {
             error_display_index = next;

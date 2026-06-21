@@ -226,16 +226,16 @@ void key_action (void)
                 // Internal mode, then the mode should be toggled to Field Mode and vice versa
                 if(Operating_Mode == DeInt_Vol_Dio)
                 {
-                    Operating_Mode =    DeInt_Gra_Dio; // Interlock Volumetric Mode  
-                    M052 = 0; // Volumetric Mode
+                    Operating_Mode =    DeInt_Gra_Dio;
+                    M052 = 1; // Gravimetric Mode
                     M053 = 0; // Interlock Status (1=Interlocked,0=De-Interlocked)
                     //M015 = 0; // Int/De-Interlock Mode Select (1-De-Interlock, 0-Int)
                     return;
                 }
                 else if(Operating_Mode == DeInt_Gra_Dio)
                 {
-                    Operating_Mode = DeInt_Vol_Dio; // Interlock Gravimetric Mode  
-                    M052 = 1; // Gravimetric Mode
+                    Operating_Mode = DeInt_Vol_Dio;
+                    M052 = 0; // Volumetric Mode
                     M053 = 0; // Interlock Status (1=Interlocked,0=De-Interlocked)
                     //M015 = 0; // Int/De-Interlock Mode Select (1-De-Interlock, 0-Int)
                     return;

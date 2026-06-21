@@ -159,9 +159,16 @@ void Modbus_Registers(void);
 /**************inverter/DIO**************/
 void Invter_ModCom(void);
 void Invter2_ModCom(void);
-void Menu_ServiceInvComms(void);
+void Menu_ServiceInvComms(void); /* SIO + VFD/DIO + PLC/control while menu/IO monitor blocks main */
 void ResetInvCommState(void); /* msk29-may-26 */
+void ClearInvCommFaultFlags(void); /* inv comm fault clear without VFD DI debounce reset */
 void ResetInvCommAfterOfflineMenu(void); /* msk29-may-26 */
+void ResetVfdDiInputFilter(void); /* debounce I024-I029 after boot or menu */
+#define VFD_BOOT_WARMUP_MS    1000U
+void VfdBootCommWarmup_ms(unsigned int duration_ms); /* poll VFD before main loop */
+void VfdDiSanitizeStartMarkers(void); /* clear phantom M011 before PLC scan */
+unsigned char VfdDiPlcReady(void);
+unsigned char VfdDiLevel024(void);
 void InvComm_NotifyOfflineMenuEnter(void); /* msk29-may-26 */
 /****************************************/
 
@@ -175,6 +182,7 @@ void AI_adc2_avg_cal(void);
 /**************setpoint/display**********/
 void Calculate_WF_drive_setpoint_Display(void);
 void PF_Drive_Setpoint_Cal(void);
+void Update_External_Setpoint(void);
 void Calculate_Setpoint_Display(void);
 void Gate_Postion_CalCulation(void);
 /****************************************/
@@ -210,6 +218,8 @@ void Totaliser_Out(void); //Tot5aliser_Out (To display  count of T1 and/or T2 at
 /****************************************/
 //---controls.c
 void ControlActions(void);
+void ApplyFaultResetMarkers(void); /* M018-equivalent fault / inv comm clear */
+void VfdBootPostWarmupInit(void);  /* fault clear + sanitize after boot VFD warmup */
 void Ext_WF_Controls(void);
 bool GetFieldMode(void);
 bool GetComMode(void);

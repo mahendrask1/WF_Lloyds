@@ -116,15 +116,16 @@ extern char plc_std[5][200][6],plc_inst[200][6],Error_No;
 extern uint8_t plc_temp[400];
 plc_instruction_struct plc_ass_1[200];
 
-/* I024..I039: VFD/inverter digital inputs in ram_values (Invter_ModCom writes here).
-   BSS is 0 at reset; PLC may copy into M010/M017/M019 before first good Modbus read,
-   causing false emergency/interlock/drive faults. Default to 1 ("healthy" for M-style bits). */
+/* I024..I039: VFD digital inputs (Invter_ModCom). Default 1 = healthy for NC/emergency DIs.
+   I024 only: default 0 (start NO open) so SM 011 does not run before first VFD read.
+   Prakesh ladder: AI 027 = M010 (DI4 emg NC) — I027 must not default 0. */
 static void Init_Vfd_Plc_Input_Image_Defaults(void)
 {
     unsigned int k;
     for (k = 24; k < 40; k++) {
         ram_values[k] = 1;
     }
+    ram_values[24] = 0; /* I024/DI1 start NO: open until VFD Modbus valid */
 }
 
 /*******************************************************************************************/
@@ -675,6 +676,7 @@ M017 = 1;//: Downstream interlock (1=healthy); avoid false fault from BSS 0 befo
     read_plc_edit_eeprom();
 
     Init_Vfd_Plc_Input_Image_Defaults();
+    ResetVfdDiInputFilter();
 
     Temp_Intialisation();
     serial_init();
@@ -868,6 +870,7 @@ void after_menu_initialize(void)
     M019 = 1;
     M020 = 1;
     Init_Vfd_Plc_Input_Image_Defaults();
+    ResetVfdDiInputFilter();
 }
 
 /*

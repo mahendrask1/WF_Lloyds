@@ -38,11 +38,11 @@ void UART1_IRQHandler( void );
 void UARTSend( uint32_t portNum, uint8_t *BufferPtr, uint32_t Length );
 
 extern int ModTxCount,ModTxLen,ModBusIdx;
-extern unsigned char ModBusMessage[MAX_LENGTH],ModData[MAX_LENGTH];
+extern unsigned char ModBusMessage[MODBUS_TX_BUF_SIZE], ModData[MODBUS_PDU_DATA_MAX];
 extern uint32_t Modbus_Baud_Rate;
 extern uint8_t Modbus_Parity ;
 
-extern unsigned char DIO_ModBusMessage[MAX_LENGTH],DIO_ModData[MAX_LENGTH];
+extern unsigned char DIO_ModBusMessage[DIO_MODBUS_MSG_SIZE], DIO_ModData[DIO_MODBUS_MSG_SIZE];
 extern char DIO_ModTxLen, DIO_ModTxCount,DIO_ModBusIdx ;
 
 extern unsigned char tx_over;
@@ -683,15 +683,14 @@ void UART3_IRQHandler (void) /**/
                 Timer2_init();    //re start timer1
                 /* Receive Data Available */
                 ModBusIdx++;
-                if (ModBusIdx < 30)  // Bounds check to prevent buffer overrun (ModBusMessage is 30 bytes)
+                if (ModBusIdx < MODBUS_TX_BUF_SIZE)
                 {
                     ModBusMessage[ModBusIdx] = UART_ReceiveByte((LPC_UART_TypeDef *)LPC_UART3);
                 }
                 else
                 {
-                    // Buffer full - discard byte but clear UART
                     (void)UART_ReceiveByte((LPC_UART_TypeDef *)LPC_UART3);
-                    ModBusIdx = 29;  // Keep at max valid index
+                    ModBusIdx = MODBUS_TX_BUF_SIZE - 1;
                 }
                 UART3Count++;
                 if ( UART3Count == BUFSIZE )
@@ -786,15 +785,14 @@ void UART0_IRQHandler (void)
         {
                 /* Receive Data Available */
                 DIO_ModBusIdx++;
-                if (DIO_ModBusIdx < 34)  // Bounds check to prevent buffer overrun corrupting other variables
+                if (DIO_ModBusIdx < DIO_MODBUS_MSG_SIZE)
                 {
                     DIO_ModBusMessage[DIO_ModBusIdx] = UART_ReceiveByte((LPC_UART_TypeDef *)LPC_UART0);
                 }
                 else
                 {
-                    // Buffer full - discard byte but clear UART to prevent interrupt storm
                     (void)UART_ReceiveByte((LPC_UART_TypeDef *)LPC_UART0);
-                    DIO_ModBusIdx = 33;  // Keep at max valid index
+                    DIO_ModBusIdx = DIO_MODBUS_MSG_SIZE - 1;
                 }
                 UART0Count++;
                     if ( UART0Count == BUFSIZE )

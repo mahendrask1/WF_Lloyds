@@ -124,12 +124,10 @@ unsigned char External_Operating_Modes(unsigned char MyMode)
         if(M007==1)//Gravimetric Mode (1-Gravimetric, 0-Volumetric)
         {
             MyMode=Int_Gra_Com;   //Remote (modbus command) Interlock Gravimetric Mode
-            M052 = 1; // M052 set for gravimetric  mode
         }
         else
         {
             MyMode=Int_Vol_Com;   //Remote (modbus command) Interlock Volumetric Mode
-            M052 = 0; // M052 cleared for volumetric  mode
         }
     }
     else if((M002==0) && (M053==1)) //SIO(M002=0) and Interlocked(M053=1) is set
@@ -137,12 +135,10 @@ unsigned char External_Operating_Modes(unsigned char MyMode)
         if(M007==1)//Gravimetric Mode (1-Gravimetric, 0-Volumetric)
         {
             MyMode=Int_Gra_Dio;   //Interlock Gravimetric Mode
-            M052 = 1; // M052 set for gravimetric  mode
         }
         else
         {
             MyMode=Int_Vol_Dio;   //Interlock Volumetric Mode
-            M052 = 0; // M052 cleared for volumetric  mode
         }
     }
     else if((M002==0) && (M053==0)) //De-Interlocked(M053=0) is set
@@ -151,14 +147,22 @@ unsigned char External_Operating_Modes(unsigned char MyMode)
         if(M007==1)//Gravimetric Mode (1-Gravimetric, 0-Volumetric)
         {
             MyMode=DeInt_Gra_Dio;   //De-Interlock Gravimetric Mode
-            M052 = 1; // M052 set for gravimetric  mode
         }
         else 
         {
             MyMode=DeInt_Vol_Dio;   //De-Interlock Volumetric Mode
-            M052 = 0; // M052 cleared for volumetric  mode
         }
-        // M053 = 0; // M053 set for de-interlock mode
+    }
+    else if((M002==1) && (M053==0)) // De-interlock + Modbus start/stop (M000/M001)
+    {
+        if(M007==1)
+        {
+            MyMode=DeInt_Gra_Dio;
+        }
+        else
+        {
+            MyMode=DeInt_Vol_Dio;
+        }
     }
     return MyMode;  
 }
@@ -194,18 +198,26 @@ unsigned char GetOperatingMode(unsigned char MyMode){
                 }
                 else if((M052==1)&&(M053==1))
                 {
+
                     MyMode = Int_Gra_Dio;
                 }           
             }
-        
+        /* M052 tracks M007 (Ext/PLC) or Operating_Mode (Int/panel).
+         * Digital_Input_Action() used to set M052 from M007 every scan; restore that here. */
+        if (Mode_Select == Ext)
+            M052 = (M007 != 0) ? 1 : 0;
+        else if ((MyMode == Int_Gra_Dio) || (MyMode == DeInt_Gra_Dio) || (MyMode == Int_Gra_Com))
+            M052 = 1;
+        else
+            M052 = 0;
     }//End of Remote Mode
     else if(M008==0 )//Local remote selection(1-Rmote, 0-local) 
     {
         MyMode=FieldMode;   //Field Mode
         M051 = 1; // Output Marker M051;0-Remote ; 1-Local
-        M052 = 0; // M052 cleared for volumetric  mode
-        M053 = 0; // M053 set for de-interlock mode
-    }//End of Local Mode
+        M052 = 0; // Field mode status: volumetric
+        M053 = 0; // Field mode status: de-interlock
+    }
     return MyMode;
 }//End of OperatingModeAction()
 //-------------------------------------------------------
@@ -333,6 +345,62 @@ bool GetFieldMode()
     }
 }
 //-----------------------------------------------------
+/* Same marker/error clear as M018 fault ack (also used after boot VFD warmup). */
+void ApplyFaultResetMarkers(void)
+{
+    Error_No = 0;
+    M056 = 0;
+    M057 = 0;
+    M058 = 0;
+    M059 = 0;
+    M060 = 0;
+    M040 = 0;
+    M041 = 0;
+    M042 = 0;
+    M043 = 0;
+    M044 = 0;
+    M045 = 0;
+    M009 = 1;
+    M017 = 1;
+    M010 = 1;
+    M019 = 1;
+    M020 = 1;
+    M077 = 0;
+    M046 = 0;
+    ErrorLatch_ClearAll();
+    ResetInvCommState();
+}
+
+/* After VfdBootCommWarmup_ms: clear latched boot faults without wiping VFD DI filter. */
+void VfdBootPostWarmupInit(void)
+{
+    if (Inv == 0)
+        return;
+    Error_No = 0;
+    M056 = 0;
+    M057 = 0;
+    M058 = 0;
+    M059 = 0;
+    M060 = 0;
+    M040 = 0;
+    M041 = 0;
+    M042 = 0;
+    M043 = 0;
+    M044 = 0;
+    M045 = 0;
+    M009 = 1;
+    M017 = 1;
+    M010 = 1;
+    M019 = 1;
+    M020 = 1;
+    M077 = 0;
+    M046 = 0;
+    ErrorLatch_ClearAll();
+    ClearInvCommFaultFlags();
+    VfdDiSanitizeStartMarkers();
+}
+
+//-----------------------------------------------------
 bool UpdateTripStatus()
 {
     bool flag = false;
@@ -392,29 +460,7 @@ bool UpdateTripStatus()
     }
     if (M018 == 1) // Fault ack_i/p
     {
-        Error_No = 0;
-        M056 = 0; // Limit1
-        M057 = 0; // Limit2
-        M058 = 0; // Overload Alarm
-        M059 = 0; // Underload Alarm
-        M060 = 0; // Loadcell Fault
-        M040 = 0; // Tacho Fault
-        M041 = 0; // Belt Tracking
-        M042 = 0; // Reset WF Drive Fault
-        M043 = 0; // Deviation Fault
-        M044 = 0; // General Fault
-        M045 = 0; // PF Drive Fault Marker
-        // M009 = 0;  //Belt track Fault
-        M009 = 1; // Belt track Fault. msk marker reversal 31-aug-25
-        // M017 = 0;  //Interlock Fault
-        M017 = 1; // Interlock Fault. msk marker reversal 31-aug-25
-        M010 = 1; // Emergency Fault if M010 = 0
-        M019 = 1; // WF Drive Fault  if M019 = 0
-        M020 = 1; // PF Drive Fault  if M020 = 0
-        M077 = 0; // ACAL Abort clear
-        M046 = 0; // ZSS faulr Marker
-        ErrorLatch_ClearAll();
-        ResetInvCommState(); /* msk29-may-26: M018 also resets inv comm counters */
+        ApplyFaultResetMarkers();
         M018 = 0;
         flag = false;
     }
@@ -526,8 +572,8 @@ void Ext_WF_Controls()
                 Current_Setpoint = Common_Setpoint;
             }// if(M002 == 1) //Remote communication mode
         }// if((Operating_Mode == Int_gra_Com)||(Operating_Mode == Int_vol_Com))
-        else if((Operating_Mode == Int_Gra_Dio)||(Operating_Mode == Int_Vol_Dio) &&
-         (M002 == 0))//SIO(M002=0) and Interlocked(M053=1) is set
+        else if(((Operating_Mode == Int_Gra_Dio) || (Operating_Mode == Int_Vol_Dio)) &&
+         (M002 == 0))//SIO(M002=0): interlock start via M016, setpoint from analog AI
         {
             if((M016 == 1) && (M044 == 0))//Start remote interlocked
             {
@@ -564,6 +610,8 @@ void Ext_WF_Controls()
             Totaliser1_Update = 0;
             M003 = 0;//Clear Totaliser1 Clear Marker
         }
+        if (Current_Setpoint > Capacity)
+            Current_Setpoint = Capacity;
         M051 = 0; // Output Marker M051;0-Remote ; 1-Local(Field mode)
     }// if(M008==1)//Remote mode
     else if(M008 == 0)    // Local/field panel (M008 from I024: 0=local)
@@ -686,6 +734,7 @@ void Ext_WF_Controls()
 //-------------------------------------------------------------------------------------
 void ControlActions()
 {
+    Update_External_Setpoint();
     Operating_Mode = GetOperatingMode(Operating_Mode);
     CurTripStatus = UpdateTripStatus();
     CurErrorStatus = UpdateErrorStatus();
@@ -695,3 +744,10 @@ void ControlActions()
         ApplyWfDriveFaultTrip();
 }
 //-------------------------------------------------------------------------------------
+
+///-----
+/*
+Test SPSS
+
+
+*/

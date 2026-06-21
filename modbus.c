@@ -101,8 +101,7 @@ int ModDataLen;
 int ModTxLen, ModTxCount;
 extern int ModBusIdx,Common_Setpoint;
 /* FC 3/4 response: 3 header + (2*RegCount) data + 2 CRC. 25 regs = 55 bytes. */
-#define MODBUS_TX_BUF_SIZE  60
-unsigned char ModBusMessage[MODBUS_TX_BUF_SIZE], ModData[30];
+unsigned char ModBusMessage[MODBUS_TX_BUF_SIZE], ModData[MODBUS_PDU_DATA_MAX];
 //char ram_value[8];
 unsigned char Baud_Rate_Modbus,Comm_Address;
 extern int rx_msg;
@@ -722,12 +721,27 @@ void modbus(void)
     if (rx_msg == 1) {
         Mod_Monitoring_Flag = 1;
         rx_msg = 0;
+
+        if (ModBusIdx < 0 || ModBusIdx >= MODBUS_TX_BUF_SIZE) {
+            ModBusIdx = -1;
+            DIRN_MAX487(0);
+            return;
+        }
+
         GetCRC16(ModBusMessage, ModBusIdx - 1);
 
         if (CRCHi == ModBusMessage[ModBusIdx - 1] && CRCLo == ModBusMessage[ModBusIdx]) {
             ModAddr = ModBusMessage[0];
             ModFunction = ModBusMessage[1];
+            if ((ModBusIdx - 3) > MODBUS_PDU_DATA_MAX) {
+                ModBusIdx = -1;
+                DIRN_MAX487(0);
+                return;
+            }
             for (ij = 2; ij <= ModBusIdx - 2; ij++) {
+                if ((ij - 2) >= MODBUS_PDU_DATA_MAX) {
+                    break;
+                }
                 ModData[ij - 2] = ModBusMessage[ij];
             }
             ModDataLen = ModBusIdx - 3;

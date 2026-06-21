@@ -45,7 +45,7 @@ Bit_Address,Function_Code,Access,Type,Tag,Notes
 43,FC02,RO,DiscreteInput,M043,Marker discrete input
 44,FC02,RO,DiscreteInput,M044,Marker discrete input
 45,FC02,RO,DiscreteInput,M045,Marker discrete input
-46,FC02,RO,DiscreteInput,M046,Marker discrete input
+46,FC02,RO,DiscreteInput,M046,Marker discrete inputyy
 47,FC02,RO,DiscreteInput,M047,Marker discrete input
 48,FC02,RO,DiscreteInput,M048,Marker discrete input
 49,FC02,RO,DiscreteInput,M049,Marker discrete input

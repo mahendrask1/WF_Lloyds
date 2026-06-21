@@ -130,6 +130,8 @@ int main(void)
 {
     main_initialize_routine();
     ABCC_Init();
+    VfdBootCommWarmup_ms(VFD_BOOT_WARMUP_MS);
+    VfdBootPostWarmupInit();
 
     loop_forever:
     {
@@ -185,6 +187,7 @@ int main(void)
             if (((scan_count % 2) == 0) && (Default_Start_bit == false))
             {
                 IO_Control_Routine();
+                VfdDiSanitizeStartMarkers();
                 plc_execute();
                 ControlActions(); /* Digital_Input_Action() disabled 17-mar-2026 */
                 Valve_Control();

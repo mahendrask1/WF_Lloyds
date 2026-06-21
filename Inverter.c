@@ -11,6 +11,7 @@
 #include "keys.h"
 #include "plc.h"
 #include "Errors.h" /* msk29-may-26: ErrorLatch_ClearInvComm */
+#include "functions.h"
 
 uint16_t iocomerrcnts = 0;   /* io module comm error counts */
 uint16_t iocomcounts = 0;    /* counts increase in Timer0 IRQ every 5 ms */
@@ -41,7 +42,7 @@ unsigned char Read_count_AtvReg,Read_count_AtvReg_1;
 extern int DIO_ModTxLen, DIO_ModTxCount;
 void     DIO_DIRN_MAX487(char);
 unsigned int DIO_GetCRC16(unsigned char *, int );
-extern unsigned char DIO_ModBusMessage[34],DIO_ModData[34];
+extern unsigned char DIO_ModBusMessage[DIO_MODBUS_MSG_SIZE], DIO_ModData[DIO_MODBUS_MSG_SIZE];
 //extern uint16_t dacop1,dacop2;
 extern unsigned long Min_Count_Channel1,Min_Count_Channel2,Min_Count_Channel3,Max_Count_Channel1,Max_Count_Channel2,Max_Count_Channel3,temp_AO_val;
 extern unsigned long Dac1_SpanCounts,Dac2_SpanCounts,Dac3_SpanCounts;
@@ -54,10 +55,199 @@ static unsigned char inv_commpointer = 0; /* msk29-may-26: bus slot seq reset on
 
 #define INV_RX_TIMEOUT_TICKS  10U  /* 10 x 5 ms Timer0 tick = ~50 ms no-progress timeout msk 19-jun-2026 */
 
+/* Two consecutive matching VFD DI reads before commit (boot warmup handles 1 s settle). */
+#define VFD_DI_STABLE_READS   2U
+
+static unsigned char vfd_di_prev[6];
+static unsigned char vfd_di_stable_cnt;
+static unsigned char vfd_di_level[6];
+static unsigned char i024_low_stable_cnt;
+static unsigned char vfd_di_plc_ready;
+
+static void VfdWaitIocountsTicks(uint16_t ticks)
+{
+    uint16_t t0;
+
+    if (ticks == 0)
+        return;
+    t0 = iocomcounts;
+    while ((uint16_t)(iocomcounts - t0) < ticks) {
+        ;
+    }
+}
+
+static void ResetVfdDiDebounce(void)
+{
+    unsigned char k;
+
+    for (k = 0; k < 6; k++) {
+        vfd_di_prev[k] = 0;
+        vfd_di_level[k] = 0;
+    }
+    vfd_di_stable_cnt = 0;
+    i024_low_stable_cnt = 0;
+    vfd_di_plc_ready = 0;
+    I024 = 0; /* start NO open until VFD DI trusted; leave I025-I029 at init defaults */
+}
+
+void ResetVfdDiInputFilter(void)
+{
+    ResetVfdDiDebounce();
+}
+
+unsigned char VfdDiPlcReady(void)
+{
+    return vfd_di_plc_ready;
+}
+
+unsigned char VfdDiLevel024(void)
+{
+    return vfd_di_level[0];
+}
+
+void VfdDiSanitizeStartMarkers(void)
+{
+    /* Local mode only — Prakesh / I024 start ladder (ANM008, AI 024, SM 011). */
+    if (M008 != 0)
+        return;
+
+    /* Before VFD start DI is trusted: keep stopped (blocks phantom SM 011 at PW ON). */
+    if (!vfd_di_plc_ready) {
+        if (M011 == 1 && M066 == 0) {
+            M011 = 0;
+            M012 = 1;
+        }
+        return;
+    }
+
+    /* After ready: VFD start DI is low but M011 latched — controller-only false start. */
+    if (vfd_di_level[0] != 0)
+        return;
+    if (M011 == 1 && M066 == 0) {
+        M011 = 0;
+        M012 = 1;
+    }
+}
+
+static void Acs380560580_UnpackFc03(void)
+{
+    /* FC03 read addr 0x0003 x6: SW[3-4], 10.02 DI[5-6], 10.21 OP[7-8], freq[9-10], … current[13-14] */
+    INV_modarray_rd[1] = DIO_ModBusMessage[3];
+    INV_modarray_rd[0] = DIO_ModBusMessage[4];
+    INV_modarray_rd[5] = DIO_ModBusMessage[5];
+    INV_modarray_rd[2] = DIO_ModBusMessage[6];
+    INV_modarray_rd[3] = DIO_ModBusMessage[7];
+    INV_modarray_rd[4] = DIO_ModBusMessage[8];
+    INV_modarray_rd[7] = DIO_ModBusMessage[9];
+    INV_modarray_rd[6] = DIO_ModBusMessage[10];
+    INV_modarray_rd[8] = DIO_ModBusMessage[14];
+}
+
+static void CommitVfdDiToPlc(unsigned char d24, unsigned char d25, unsigned char d26,
+                             unsigned char d27, unsigned char d28, unsigned char d29)
+{
+    vfd_di_level[0] = d24;
+    vfd_di_level[1] = d25;
+    vfd_di_level[2] = d26;
+    vfd_di_level[3] = d27;
+    vfd_di_level[4] = d28;
+    vfd_di_level[5] = d29;
+
+    /* I024 = VFD local START DI: block highs until drive reports stable LOW (open contact). */
+    if (!vfd_di_plc_ready) {
+        if (d24 == 0) {
+            if (i024_low_stable_cnt < 255)
+                i024_low_stable_cnt++;
+        } else {
+            i024_low_stable_cnt = 0;
+        }
+        if (i024_low_stable_cnt >= VFD_DI_STABLE_READS)
+            vfd_di_plc_ready = 1;
+        I024 = 0;
+    } else {
+        I024 = d24;
+    }
+
+    I025 = d25;
+    I026 = d26;
+    I027 = d27;
+    I028 = d28;
+    I029 = d29;
+}
+
+void VfdBootCommWarmup_ms(unsigned int duration_ms)
+{
+    uint16_t start;
+    uint16_t total_ticks;
+
+    if (Inv == 0)
+        return;
+    if (duration_ms == 0)
+        return;
+
+    total_ticks = (uint16_t)(duration_ms / 5U);
+    if (total_ticks == 0)
+        total_ticks = 1;
+
+    start = iocomcounts;
+    while ((uint16_t)(iocomcounts - start) < total_ticks) {
+        Invter_ModCom();
+        VfdWaitIocountsTicks(1);
+    }
+}
+
+static void UpdateVfdDiDebounced(unsigned char d24, unsigned char d25, unsigned char d26,
+                                 unsigned char d27, unsigned char d28, unsigned char d29)
+{
+    unsigned char cur[6];
+    unsigned char k;
+    unsigned char match;
+
+    cur[0] = d24;
+    cur[1] = d25;
+    cur[2] = d26;
+    cur[3] = d27;
+    cur[4] = d28;
+    cur[5] = d29;
+
+    match = 1;
+    for (k = 0; k < 6; k++) {
+        if (cur[k] != vfd_di_prev[k]) {
+            match = 0;
+            break;
+        }
+    }
+
+    if (match) {
+        if (vfd_di_stable_cnt < 255)
+            vfd_di_stable_cnt++;
+    } else {
+        for (k = 0; k < 6; k++)
+            vfd_di_prev[k] = cur[k];
+        vfd_di_stable_cnt = 1;
+    }
+
+    if (vfd_di_stable_cnt >= VFD_DI_STABLE_READS) {
+        CommitVfdDiToPlc(d24, d25, d26, d27, d28, d29);
+    }
+}
+
 static char inv_rx_last_idx = -2;
 static uint16_t inv_rx_progress_time;
 static char inv2_rx_last_idx = -2;
 static uint16_t inv2_rx_progress_time;
+
+/* Reject VFD/AO/DIO RX if expected length exceeds UART0 buffer (prevents parse overrun). */
+static int InvDioFrameComplete(void)
+{
+    if (DIO_ModBusIdx != (char)Rx_byte_count)
+        return 0;
+    if (DIO_ModBusIdx < 0)
+        return 0;
+    if (Rx_byte_count >= DIO_MODBUS_MSG_SIZE)
+        return 0;
+    return 1;
+}
 
 void Print_String(char **string, char start_row, char start_col, char font_size, char underline_no);
 
@@ -69,8 +259,8 @@ static void InvComm_SetComError(unsigned char inv_num)
         Error_No = 14;
 }
 
-/* msk29-may-26: clear inv comm counters/flags/latch (menu exit, M066, M018) */
-void ResetInvCommState(void)
+/* msk29-may-26: inv comm counters/flags/latch — no VFD DI debounce reset */
+void ClearInvCommFaultFlags(void)
 {
     INV_Error_Flag = 0;
     INV2_Error_Flag = 0;
@@ -95,6 +285,13 @@ void ResetInvCommState(void)
         Error_No = 0;
 
     ErrorLatch_ClearInvComm();
+}
+
+/* msk29-may-26: clear inv comm counters/flags/latch (menu exit, M066, M018) */
+void ResetInvCommState(void)
+{
+    ClearInvCommFaultFlags();
+    ResetVfdDiDebounce();
 }
 
 /* msk29-may-26: called from menu ESC; edge detect fails while menu blocks main loop */
@@ -277,7 +474,7 @@ unsigned char rec_Aioresponse(void)
     else
         return 0;
 
-    if ((DIO_ModBusIdx > 6) && (DIO_ModBusIdx < 127))
+    if ((DIO_ModBusIdx > 6) && (DIO_ModBusIdx < DIO_MODBUS_MSG_SIZE))
     {
         if (DIO_ModBusMessage[0] != expected_addr)
             return 0;
@@ -712,7 +909,7 @@ void Invter_ModCom(void)
             }// case 2 Invter_Status
             case 3:
             {
-                if (DIO_ModBusIdx == Rx_byte_count)
+                if (InvDioFrameComplete())
                 {
                     DIO_GetCRC16(DIO_ModBusMessage, DIO_ModBusIdx - 1);
                     if ((DIO_ModBusMessage[DIO_ModBusIdx - 1] == DIO_CRCHi) &&
@@ -746,14 +943,8 @@ void Invter_ModCom(void)
                                 }// if Inv==3 (ACS unpack branch A)
                                 else
                                 {
-                                    INV_modarray_rd[3]= DIO_ModBusMessage[5];            //Higher Byte : 8 to 15 bits
-                                    INV_modarray_rd[2]= DIO_ModBusMessage[6];            //Lower Byte  : 0 to 7 bits Digital ips from 1 to 6
-                                    INV_modarray_rd[5]= DIO_ModBusMessage[7];            //Higher Byte : 8 to 15 bits
-                                    INV_modarray_rd[4]= DIO_ModBusMessage[8];            //Lower Byte  : 0 to 7 bits Digital OP /* RO0
-                                    INV_modarray_rd[7]= DIO_ModBusMessage[9];          //Higher Byte : 8 to 15 bits op frequency in hz
-                                    INV_modarray_rd[6]= DIO_ModBusMessage[10];        //Lower Byte  : 0 to 7 bits op frequency in hz
-                                    INV_modarray_rd[8]= DIO_ModBusMessage[14];        //Lower Byte  : 0 to 7 bits op Current in mA
-                                }// else ACS unpack (non ACS550 legacy Inv)
+                                    Acs380560580_UnpackFc03();
+                                }// else ACS380/560/580 unpack
                             }// if ACS family Inv unpack
                             if(Inv==2)//PF4M
                             {
@@ -812,12 +1003,13 @@ void Invter_ModCom(void)
                                 case 1:  /* ATv31 Altivar */
                                     if (Read_count_AtvReg == 1)
                                     {
-                                        I024 = (INV_modarray_rd[0] & 0x01);
-                                        I025 = (INV_modarray_rd[0] & 0x02) >> 1;
-                                        I026 = (INV_modarray_rd[0] & 0x04) >> 2;
-                                        I027 = (INV_modarray_rd[0] & 0x08) >> 3;
-                                        I028 = (INV_modarray_rd[0] & 0x10) >> 4;
-                                        I029 = (INV_modarray_rd[0] & 0x20) >> 5;
+                                        UpdateVfdDiDebounced(
+                                            (unsigned char)(INV_modarray_rd[0] & 0x01),
+                                            (unsigned char)((INV_modarray_rd[0] & 0x02) >> 1),
+                                            (unsigned char)((INV_modarray_rd[0] & 0x04) >> 2),
+                                            (unsigned char)((INV_modarray_rd[0] & 0x08) >> 3),
+                                            (unsigned char)((INV_modarray_rd[0] & 0x10) >> 4),
+                                            (unsigned char)((INV_modarray_rd[0] & 0x20) >> 5));
                                     }// ATV31 Read_count status bits
                                     else if (Read_count_AtvReg == 0)
                                     {
@@ -827,45 +1019,50 @@ void Invter_ModCom(void)
                                     }// ATV31 freq/current
                                     break;
                                 case 2:  /* PF4M Allen Bradly */
-                                    I024 = (INV_modarray_rd[1] & 0x10) >> 4;
-                                    I025 = (INV_modarray_rd[1] & 0x20) >> 5;
-                                    I026 = (INV_modarray_rd[0] & 0x01);
-                                    I027 = (INV_modarray_rd[0] & 0x02) >> 1;
+                                    UpdateVfdDiDebounced(
+                                        (unsigned char)((INV_modarray_rd[1] & 0x10) >> 4),
+                                        (unsigned char)((INV_modarray_rd[1] & 0x20) >> 5),
+                                        (unsigned char)(INV_modarray_rd[0] & 0x01),
+                                        (unsigned char)((INV_modarray_rd[0] & 0x02) >> 1),
+                                        0,
+                                        0);
                                     Inv_Op_Freq = (INV_modarray_rd[3] << 8) | INV_modarray_rd[2];
                                     Inv_Op_current = INV_modarray_rd[4];
                                     break;
                                 case 6:
                                 case 7:
                                 case 8:
-                                    I024 = (INV_modarray_rd[2] & 0x01);
-                                    I025 = (INV_modarray_rd[2] & 0x02) >> 1;
-                                    I026 = (INV_modarray_rd[2] & 0x04) >> 2;
-                                    I027 = (INV_modarray_rd[2] & 0x08) >> 3;
-                                    I028 = (INV_modarray_rd[2] & 0x10) >> 4;
-                                    I029 = (INV_modarray_rd[2] & 0x20) >> 5;
+                                    CommitVfdDiToPlc(
+                                        (unsigned char)(INV_modarray_rd[2] & 0x01),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x02) >> 1),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x04) >> 2),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x08) >> 3),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x10) >> 4),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x20) >> 5));
                                     Inv_Op_Freq = (INV_modarray_rd[7] << 8) | INV_modarray_rd[6];
                                     Inv_Op_Freq = (int)((float)Inv_Op_Freq / 10);
                                     Inv_Op_current = INV_modarray_rd[8];
                                     break;
                                 case 3:  /* ACS550 ABB */
-                                    I024 = (INV_modarray_rd[2] & 0x04) >> 2;
-                                    I025 = (INV_modarray_rd[2] & 0x02) >> 1;
-                                    I026 = (INV_modarray_rd[2] & 0x01);
-                                    I027 = (INV_modarray_rd[4] & 0x04) >> 2;
-                                    I028 = (INV_modarray_rd[4] & 0x02) >> 1;
-                                    I029 = (INV_modarray_rd[4] & 0x01);
+                                    UpdateVfdDiDebounced(
+                                        (unsigned char)((INV_modarray_rd[2] & 0x04) >> 2),
+                                        (unsigned char)((INV_modarray_rd[2] & 0x02) >> 1),
+                                        (unsigned char)(INV_modarray_rd[2] & 0x01),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x04) >> 2),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x02) >> 1),
+                                        (unsigned char)(INV_modarray_rd[4] & 0x01));
                                     Inv_Op_Freq = (INV_modarray_rd[7] << 8) | INV_modarray_rd[6];
                                     Inv_Op_current = INV_modarray_rd[8];
                                     break;
                                 case 5:  /* J7 Mini */
                                 case 4:  /* J1000 Yaskawa */
-                                    I024 = (INV_modarray_rd[4] & 0x01);
-                                    I025 = (INV_modarray_rd[4] & 0x02) >> 1;
-                                    I026 = (INV_modarray_rd[4] & 0x04) >> 2;
-                                    I027 = (INV_modarray_rd[4] & 0x08) >> 3;
-                                    I028 = (INV_modarray_rd[4] & 0x10) >> 4;
-                                    if (Inv == 4)
-                                        I029 = (INV_modarray_rd[4] & 0x20) >> 5;
+                                    UpdateVfdDiDebounced(
+                                        (unsigned char)(INV_modarray_rd[4] & 0x01),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x02) >> 1),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x04) >> 2),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x08) >> 3),
+                                        (unsigned char)((INV_modarray_rd[4] & 0x10) >> 4),
+                                        (unsigned char)((Inv == 4) ? ((INV_modarray_rd[4] & 0x20) >> 5) : 0));
                                     Inv_Op_current = INV_modarray_rd[6];
                                     Inv_Op_Freq = (INV_modarray_rd[3] << 8) | INV_modarray_rd[2];
                                     break;
@@ -1182,7 +1379,7 @@ void Invter2_ModCom(void)
                 }// if tx_over INV2 wait TX done
                 break;
             case 3:// --- INV2 Rx parse (parallel logic to Invter_ModCom case 3) ---
-                if (DIO_ModBusIdx == Rx_byte_count)
+                if (InvDioFrameComplete())
                 {
                     DIO_GetCRC16(DIO_ModBusMessage, DIO_ModBusIdx - 1);
                     if ((DIO_ModBusMessage[DIO_ModBusIdx - 1] == DIO_CRCHi) &&
@@ -1214,13 +1411,7 @@ void Invter2_ModCom(void)
                                 }// Inv_1==3 ACS INV2 unpack
                                 else
                                 {
-                                    INV_modarray_rd[3] = DIO_ModBusMessage[5];
-                                    INV_modarray_rd[2] = DIO_ModBusMessage[6];
-                                    INV_modarray_rd[5] = DIO_ModBusMessage[7];
-                                    INV_modarray_rd[4] = DIO_ModBusMessage[8];
-                                    INV_modarray_rd[7] = DIO_ModBusMessage[9];
-                                    INV_modarray_rd[6] = DIO_ModBusMessage[10];
-                                    INV_modarray_rd[8] = DIO_ModBusMessage[14];
+                                    Acs380560580_UnpackFc03();
                                 }// else ACS family unpack INV2 fc03
                             }// Inv_1 ACS378/560/580 branch fc03
                             if (Inv_1 == 2)

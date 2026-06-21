@@ -13,6 +13,8 @@
 #include "rtc_app.h"
 #include "functions.h" /* msk29-may-26: ResetInvCommAfterOfflineMenu */
 #include "modbus_dio.h"
+#include "modbus.h"
+#include "plc.h"
 //#include "usb_app.h"
 #include <time.h>
 #include <string.h>
@@ -1667,14 +1669,23 @@ jump3:    Call Display_Main_Menu_routine
 */
 //Note: Font size is fixed. i.e. font10
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-/* Offline/parameter menus block main(); keep VFD/DIO Modbus alive on shared UART. */
+/* Offline/parameter menus and IO monitor block main(); keep all RS485/Modbus alive. */
 void Menu_ServiceInvComms(void)
 {
     if ((scan_count % 2) == 1)
     {
+        if (SIO_Interface == 1)
+            modbus();
         DIO_modbus();
         Invter_ModCom();
         Invter2_ModCom();
+    }
+    else
+    {
+        VfdDiSanitizeStartMarkers();
+        plc_execute();
+        ControlActions();
+        Modbus_Registers();
     }
 }
 

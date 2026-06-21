@@ -26,7 +26,7 @@ char DIO_ModBusIdx = -1,DIO_Err_Gen;
 unsigned char DIO_CRCHi,DIO_CRCLo;
 unsigned char DIO_ModAddr,DIO_ModFunction,DIO_DataByteCount;
 volatile char DIO_modarray_rd[2],DIO_modarray_wr[2];
-unsigned char DIO_ModBusMessage[34],DIO_ModData[34];
+unsigned char DIO_ModBusMessage[DIO_MODBUS_MSG_SIZE], DIO_ModData[DIO_MODBUS_MSG_SIZE];
 unsigned char tx_over,Rx_byte_count, DIO_status;
 unsigned char read_ok,write_ok;
 
@@ -331,8 +331,11 @@ void DIO_ComposeMessageRtu(    unsigned char Slave_Addr,
                                         DIO_ModBusMessage[4]= Reg_val_hi;//Qty_reg_hi; //0x00;   // reg val  hi
                                         DIO_ModBusMessage[5]= Reg_val_lo;//Qty_reg_lo; // DIO_modarray_wr[0];//0x03;  //reg val  lo
 
-                                        // Bounds check: DIO_ModBusMessage is 34 bytes, need room for header(7)+data+crc(2)
-                                        if ((Byte_Count*2) > 25) Byte_Count = 12;  // Max 24 data bytes (12*2)
+                                        // Bounds check: DIO_ModBusMessage is DIO_MODBUS_MSG_SIZE bytes
+                                        if ((Byte_Count * 2) > 25)
+                                            Byte_Count = 12;
+                                        if ((Byte_Count * 2) + 9 > DIO_MODBUS_MSG_SIZE)
+                                            Byte_Count = (unsigned char)((DIO_MODBUS_MSG_SIZE - 9) / 2);
 
                                         DIO_ModBusMessage[6]= Byte_Count*2;//byte_count*2;
 

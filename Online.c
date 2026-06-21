@@ -1224,6 +1224,7 @@ IO_jump1:
     if(flag==1)
     {
         flag = 0;
+        Menu_ServiceInvComms();
         IO_Monitor_Offline();
 
         Key_Input = NO_KEY;
