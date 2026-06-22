@@ -52,6 +52,16 @@ static bool WfDriveOrVfdFaultActive(void)
     return false;
 }
 
+char DriveFaultErrorCode(void)
+{
+    if ((Inv != 0) && (INV_Error_Flag == 1))
+        return ERR_DRIVE_STSWD;
+    /* ATV31: status fault bit mapped via VFD DI read */
+    if ((Inv == 1) && (I027 == 1))
+        return ERR_DRIVE_STSWD;
+    return ERR_DRIVE_M019;
+}
+
 static void ApplyWfDriveFaultTrip(void)
 {
     M066 = 0;
@@ -59,12 +69,10 @@ static void ApplyWfDriveFaultTrip(void)
     M044 = 1;
     M042 = 1;
     Zero_Tacho_Feed_Buffer_Flag = 2;
-    if (INV_Error_Flag == 1)
-        Error_No = 14;
-    else if (INV2_Error_Flag == 1)
+    if (INV2_Error_Flag == 1)
         Error_No = 15;
     else
-        Error_No = 8;
+        Error_No = DriveFaultErrorCode();
 }
 /*Controls.c
 M000: Start remote (modbus command)*(verified correct)
@@ -362,7 +370,6 @@ void ApplyFaultResetMarkers(void)
     M045 = 0;
     M009 = 1;
     M017 = 1;
-    M010 = 1;
     M019 = 1;
     M020 = 1;
     M077 = 0;
@@ -371,7 +378,7 @@ void ApplyFaultResetMarkers(void)
     ResetInvCommState();
 }
 
-/* After VfdBootCommWarmup_ms: clear latched boot faults without wiping VFD DI filter. */
+/* After warmup + VfdBootSendFaultResetBeforeSuperloop: clear WF fault sources. */
 void VfdBootPostWarmupInit(void)
 {
     if (Inv == 0)
@@ -444,7 +451,7 @@ bool UpdateTripStatus()
         M042 = 1; // Set WF Drive Fault Marker
         Zero_Tacho_Feed_Buffer_Flag = 2;
 
-        Error_No = 8; // Drive faulr Alarm
+        Error_No = DriveFaultErrorCode();
         flag = true;
     }
     if (((Start_Stop_status == START) || (GetFieldMode() && (M066 == 1))) && (M020 == 0)) 
@@ -454,14 +461,17 @@ bool UpdateTripStatus()
         Start_Stop_status = STOP;
         M044 = 1; // General Fault
         M045 = 1; // PF Drive Fault Marker
-        Error_No = 8; // Drive faulr Alarm
+        Error_No = ERR_DRIVE_M019; /* PF drive healthy DIO */
         Zero_Tacho_Feed_Buffer_Flag = 2;
         flag = true;
     }
-    if (M018 == 1) // Fault ack_i/p
+    if (M018 == 1) // Fault ack_i/p — only when emg input healthy
     {
-        ApplyFaultResetMarkers();
-        M018 = 0;
+        if (M010 == 1)
+        {
+            ApplyFaultResetMarkers();
+            M018 = 0;
+        }
         flag = false;
     }
     return flag;
@@ -522,18 +532,18 @@ bool UpdateErrorStatus()
         M044 = 1;
         M045 = 1; // PF Drive Fault Marker
         Zero_Tacho_Feed_Buffer_Flag = 2;
-        Error_No = 8; // Drive faulr Alarm
+        Error_No = ERR_DRIVE_M019;
         flag = true;
     }
     if (M042 == 1)    //msk keep WF drive error latched 17-may-2026
     {
-        Error_No = 8;
+        Error_No = (INV_Error_Flag == 1) ? ERR_DRIVE_STSWD : ERR_DRIVE_M019;
         M044 = 1;
         flag = true;
     }
     if (M045 == 1)    //msk keep PF drive error latched 17-may-2026
     {
-        Error_No = 8;
+        Error_No = ERR_DRIVE_M019;
         M044 = 1;
         flag = true;
     }
@@ -654,7 +664,7 @@ void Ext_WF_Controls()
                 M044 = 1;
                 M045 = 1;
                 Zero_Tacho_Feed_Buffer_Flag = 2;
-                Error_No = 8;
+                Error_No = ERR_DRIVE_M019;
             }
         }
         //M011 set for Field Start, and M012 set for Field Stop

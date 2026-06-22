@@ -68,7 +68,7 @@ const char *ACAL_Display[4][16] = {
     {"ACAL Abort"},       /* if M072 == 1 */
 };
 
-const char *error_msg[18][20] = {
+const char *error_msg[21][20] = {
     {" "},                /* Err_no = 0 */
     {"DIO Com Error"},    /* Err_no = 1 */
     {"Modbus Com Error"}, /* Err_no = 2 */
@@ -77,7 +77,7 @@ const char *error_msg[18][20] = {
     {"Overload Alarm"},   /* Err_no = 5 */
     {"Underload Alarm"},  /* Err_no = 6 */
     {"Loadcell 1 Fault"}, /* Err_no = 7 */
-    {"Drive Fault"},      /* Err_no = 8 */
+    {"Drive Fault(M019)"}, /* Err_no = 8 — panel/PLC M019/M020 DIO */
     {"Emergency Fault"},  /* Err_no = 9 */
     {"Deviation Fault"},  /* Err_no = 10 */
     {"No PLC File"},      /* Err_no = 11 */
@@ -87,13 +87,14 @@ const char *error_msg[18][20] = {
     {"Inv2 Com Error"},   /* Err_no = 15 */
     {"Loadcell 2 Fault"}, /* Err_no = 16 */
     {"AO Comm Fail"},     /* Err_no = 17 */
+    {"Drive Fault(Sts Wd)"}, /* Err_no = 18 — VFD Modbus status word */
 };
 
 #define ERROR_MIN_CODE 1
-#define ERROR_MAX_CODE 17
+#define ERROR_MAX_CODE 18
 #define ERROR_ROTATE_SCANS 400U /* 2s at 200 scans/sec */
 
-static unsigned char error_latch[18];
+static unsigned char error_latch[21];
 static unsigned char error_display_index = 0;
 static uint16_t error_rotate_elapsed_scans = 0;
 static uint16_t error_rotate_last_scan = 0;
@@ -102,6 +103,11 @@ static void ErrorLatch_Add(unsigned char err)
 {
     if ((err >= ERROR_MIN_CODE) && (err <= ERROR_MAX_CODE))
         error_latch[err] = 1;
+}
+
+void ErrorLatch_SetFault(unsigned char err)
+{
+    ErrorLatch_Add(err);
 }
 
 static unsigned char ErrorLatch_FindNext(unsigned char start_idx)
@@ -143,20 +149,25 @@ static void ErrorLatch_Collect(void)
         error_latch[6] = 0;
     if (M060 == 1)
         ErrorLatch_Add(7);
-    if ((M042 == 1) || (M045 == 1))
-        ErrorLatch_Add(8);
+    if (M019 == 0)
+        ErrorLatch_Add(ERR_DRIVE_M019);
+    if (M045 == 1)
+        ErrorLatch_Add(ERR_DRIVE_M019);
+    if (INV_Error_Flag == 1)
+        ErrorLatch_Add(ERR_DRIVE_STSWD);
     if (M010 == 0)
         ErrorLatch_Add(9);
-    else
-        error_latch[9] = 0;
+    else if (M044 == 0)
+        error_latch[9] = 0; /* sticky until M018 clears M044 (emg ack) */
     if (M043 == 1)
         ErrorLatch_Add(10);
     if ((M017 == 0) && (!GetFieldMode()))
         ErrorLatch_Add(12);
+    else if (M044 == 0)
+        error_latch[12] = 0; /* sticky until M018 clears M044 */
     if (M046 == 1)
         ErrorLatch_Add(13);
-    if (INV_Error_Flag == 1)
-        ErrorLatch_Add(14);
+    /* Err14/15: Inv comm timeout/CRC only — not INV_Error_Flag (status word uses ERR_DRIVE_STSWD) */
     if (INV2_Error_Flag == 1)
         ErrorLatch_Add(15);
     if (M062 == 1)
@@ -248,7 +259,8 @@ static void ErrorLine_Refresh(void)
 void ErrorLatch_ClearAll(void)
 {
     unsigned char i;
-    for (i = 0; i < 18; i++)
+
+    for (i = 0; i <= ERROR_MAX_CODE; i++)
         error_latch[i] = 0;
     error_display_index = 0;
     error_rotate_elapsed_scans = 0;
@@ -263,7 +275,9 @@ void ErrorLatch_ClearInvComm(void)
 {
     error_latch[14] = 0;
     error_latch[15] = 0;
-    if ((error_display_index == 14) || (error_display_index == 15))
+    error_latch[ERR_DRIVE_STSWD] = 0;
+    if ((error_display_index == 14) || (error_display_index == 15)
+        || (error_display_index == ERR_DRIVE_STSWD))
     {
         unsigned char next = ErrorLatch_FindNext(ERROR_MIN_CODE);
         if (next == 0)
@@ -298,6 +312,8 @@ uint16_t ErrorLatch_GetBitmapHigh(void)
 
     if (error_latch[17] == 1)
         bitmap = 0x0001;
+    if (error_latch[ERR_DRIVE_STSWD] == 1)
+        bitmap |= 0x0002;
     return bitmap;
 }
 
@@ -470,7 +486,7 @@ void Display_Error(void)
         {
             Error_No = 3; /* Tacho Fault Alarm */
             M040 = 1;
-            M042 = 1;
+            //M042 = 1; //msk commented 21-jun-26
             M044 = 1;
             scan_count_Tacho = scan_count_Tacho_monitor;
             if (!GetFieldMode())

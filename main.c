@@ -131,7 +131,8 @@ int main(void)
     main_initialize_routine();
     ABCC_Init();
     VfdBootCommWarmup_ms(VFD_BOOT_WARMUP_MS);
-    VfdBootPostWarmupInit();
+    VfdBootSendFaultResetBeforeSuperloop(); /* VFD CW fault reset + stop */
+    VfdBootPostWarmupInit();                /* WF markers, latches, comm flags */
 
     loop_forever:
     {

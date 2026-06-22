@@ -13,7 +13,8 @@
 #include "main_routine.h"
 #include "OLED_2_7_12864.h"
 #include "functions.h"
-#include "parameters.h" // #include "menu.h"
+#include "parameters.h"
+#include "Errors.h"
 #include "timer.h"
 #include "eeprom.h"
 #include "adc.h"
@@ -81,7 +82,7 @@ void Digital_Input_Action()
         M042 = 1; // Set WF Drive Fault Marker
         Zero_Tacho_Feed_Buffer_Flag = 2;
 
-        Error_No = 8; // Drive faulr Alarm
+        Error_No = ERR_DRIVE_M019;
     }
 
     if ((Start_Stop_status == START) && (M020 == 0)) { //m20= drive healthy-pf, 0=fault
@@ -90,7 +91,7 @@ void Digital_Input_Action()
         Start_Stop_status = STOP;
         M044 = 1; // General Fault
         M045 = 1; // PF Drive Fault Marker
-        Error_No = 8; // Drive faulr Alarm
+        Error_No = ERR_DRIVE_M019;
         Zero_Tacho_Feed_Buffer_Flag = 2;
     }
 

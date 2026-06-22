@@ -285,9 +285,8 @@ void LED_Routine(void)
         GPIO_PinWrite(2,2,1);//Int/Deint Led on
         GPIO_PinWrite(2,3,1);// auto/man led on
         */
-        if( (Error_No != 0) && (Error_No != 5) && (Error_No != 6) ) 
-         //blink start/stop LED and M064 in case of 
-        //error, except underload and overload
+        if (((Error_No != 0) && (Error_No != 5) && (Error_No != 6)) || (M044 == 1))
+         /* blink: fault display or M044 trip until M018 ack */
         {
             toggle_start_stop();  //for Errors
             goto jump_a;
@@ -305,8 +304,8 @@ void LED_Routine(void)
     jump_a:
         //msk removed error condition check 10-05-2026
         //if( Error_No == 0 )    //if no error
-        if( (Error_No == 0) || (Error_No == 5) || (Error_No == 6) )   
-         //no error, or non-tripping load alarms
+        if (((Error_No == 0) || (Error_No == 5) || (Error_No == 6)) && (M044 == 0))
+         /* steady run LED when no trip and no fault display */
         {
             GPIO_PinWrite(2,0,Start_Stop_status);//START_STOP //OFF
             M064 = M066;

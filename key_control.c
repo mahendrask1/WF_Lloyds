@@ -170,7 +170,7 @@ void key_action (void)
                         Zero_Tacho_Feed_Buffer_Flag =2;
                         M066=0;
                     }
-                    else 
+                    else if ((M044 == 0) && (M010 == 1))
                     {
                         Start_Stop_status = START;
                         M066=1;

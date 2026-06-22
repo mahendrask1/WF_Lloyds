@@ -153,7 +153,7 @@ extern uint16_t Display_Belt_Speed;
 //    {"St:Rdy fr Disch"}
 //};
 
-extern const char *error_msg[18][20],*ACAL_Display[3][16];
+extern const char *error_msg[21][20],*ACAL_Display[3][16];
 unsigned char IO_database_offline[11],IO_Ptr_offline=11,IO_Ptr1_offline,IO_Ptr2_offline,IO_Stat_offline;
 
 unsigned char IO_Disp_L1_offline = 0,IO_Disp_L2_offline =10 ,IO_Disp_L3_offline = 20,IO_Disp_L4_offline = 30,IO_Disp_L5_offline= 40;

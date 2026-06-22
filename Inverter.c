@@ -196,6 +196,190 @@ void VfdBootCommWarmup_ms(unsigned int duration_ms)
     }
 }
 
+#define VFD_BOOT_TXRX_TIMEOUT_TICKS  200U  /* 1 s @ 5 ms Timer0 tick */
+
+static void VfdBootBusSettle(void)
+{
+    int spin_i;
+
+    for (spin_i = 0; spin_i < 350; spin_i++) {
+        ;
+    }
+    VfdWaitIocountsTicks(4);
+}
+
+static void VfdBootGetCwAddr(unsigned char *cw_hi, unsigned char *cw_lo)
+{
+    switch (Inv) {
+    case 1:
+        *cw_hi = 0x21;
+        *cw_lo = 0x35;
+        break;
+    case 2:
+        *cw_hi = 0x20;
+        *cw_lo = 0x00;
+        break;
+    case 3:
+    case 6:
+    case 7:
+    case 8:
+        *cw_hi = 0x00;
+        *cw_lo = 0x00;
+        break;
+    case 4:
+    case 5:
+        *cw_hi = 0x00;
+        *cw_lo = 0x01;
+        break;
+    default:
+        *cw_hi = 0;
+        *cw_lo = 0;
+        break;
+    }
+}
+
+static void VfdBootFillFaultResetModData(void)
+{
+    switch (Inv) {
+    case 1:
+        Mod_Data[0] = 0x00;
+        Mod_Data[1] = 0x86;
+        break;
+    case 2:
+        Mod_Data[0] = 0x00;
+        Mod_Data[1] = 0x08;
+        break;
+    case 3:
+        Mod_Data[0] = 0x04;
+        Mod_Data[1] = 0x86;
+        break;
+    case 6:
+    case 7:
+    case 8:
+        Mod_Data[0] = 0x04;
+        Mod_Data[1] = 0xFF;
+        break;
+    case 4:
+    case 5:
+        Mod_Data[0] = 0x00;
+        Mod_Data[1] = 0x08;
+        break;
+    default:
+        Mod_Data[0] = 0;
+        Mod_Data[1] = 0;
+        break;
+    }
+}
+
+static void VfdBootFillStopModData(void)
+{
+    unsigned char stop_lo;
+
+    switch (Inv) {
+    case 1:
+        Mod_Data[0] = 0x00;
+        stop_lo = 0x06;
+        break;
+    case 2:
+        Mod_Data[0] = 0x00;
+        stop_lo = 0x01;
+        break;
+    case 3:
+    case 6:
+    case 7:
+    case 8:
+        Mod_Data[0] = 0x04;
+        stop_lo = 0x76; /* ACS stop CW 0x0476 */
+        break;
+    case 4:
+    case 5:
+        Mod_Data[0] = 0x00;
+        stop_lo = 0x00;
+        break;
+    default:
+        Mod_Data[0] = 0;
+        stop_lo = 0;
+        break;
+    }
+    Mod_Data[1] = stop_lo;
+}
+
+static int VfdBootWaitFc10Ack(void)
+{
+    uint16_t t0;
+
+    t0 = iocomcounts;
+    while ((uint16_t)(iocomcounts - t0) < VFD_BOOT_TXRX_TIMEOUT_TICKS) {
+        if (tx_over == 1) {
+            if (DIO_ModBusIdx >= 0 && (unsigned char)DIO_ModBusIdx == Rx_byte_count) {
+                DIO_GetCRC16(DIO_ModBusMessage, (unsigned int)DIO_ModBusIdx - 1U);
+                if ((DIO_ModBusMessage[DIO_ModBusIdx - 1] == DIO_CRCHi) &&
+                    (DIO_ModBusMessage[DIO_ModBusIdx] == DIO_CRCLo) &&
+                    (DIO_ModBusMessage[1] == 0x10)) {
+                    return 1;
+                }
+                return 0;
+            }
+        }
+    }
+    return 0;
+}
+
+static void VfdBootSendFc10Write(unsigned char cw_hi, unsigned char cw_lo,
+                                 unsigned char reg_qty)
+{
+    Mod_Data[2] = 0;
+    Mod_Data[3] = 0;
+    if (Inv == 3) {
+        Mod_Data[4] = 0;
+        Mod_Data[5] = 0;
+    }
+
+    DIO_ComposeMessageRtu(0x02, 0x10, cw_hi, cw_lo, 0x00, reg_qty, reg_qty);
+    Rx_byte_count = 7;
+    DIO_ModBusIdx = -1;
+    (void)VfdBootWaitFc10Ack();
+}
+
+/* After warmup: VFD fault-reset CW then stop CW; clears drive-side boot comm/fault latch. */
+void VfdBootSendFaultResetBeforeSuperloop(void)
+{
+    unsigned char cw_hi;
+    unsigned char cw_lo;
+    unsigned char reg_qty;
+
+    if (Inv == 0)
+        return;
+    if ((Inv < 1) || (Inv > 8))
+        return;
+
+    Dev_ID = 2;
+    VfdBootGetCwAddr(&cw_hi, &cw_lo);
+    reg_qty = (Inv == 3) ? 0x03 : 0x02;
+
+    VfdBootBusSettle();
+
+    VfdBootFillFaultResetModData();
+    VfdBootSendFc10Write(cw_hi, cw_lo, reg_qty);
+
+    VfdBootBusSettle();
+
+    VfdBootFillStopModData();
+    VfdBootSendFc10Write(cw_hi, cw_lo, reg_qty);
+
+    VfdBootBusSettle();
+
+    INV_Error_Flag = 0;
+    Err_Counter_Inv = 0;
+    Err_Gen = 0;
+    Invter_Status = 1;
+    INV_read_ok = 0;
+    INV_write_ok = 1;
+    DIO_ModBusIdx = -1;
+    tx_over = 0;
+    inv_commpointer = 0;
+}
+
 static void UpdateVfdDiDebounced(unsigned char d24, unsigned char d25, unsigned char d26,
                                  unsigned char d27, unsigned char d28, unsigned char d29)
 {
@@ -253,10 +437,13 @@ void Print_String(char **string, char start_row, char start_col, char font_size,
 
 static void InvComm_SetComError(unsigned char inv_num)
 {
-    if (inv_num == 15)
+    if (inv_num == 15) {
         Error_No = 15;
-    else
+        ErrorLatch_SetFault(15);
+    } else {
         Error_No = 14;
+        ErrorLatch_SetFault(14);
+    }
 }
 
 /* msk29-may-26: inv comm counters/flags/latch — no VFD DI debounce reset */
@@ -279,9 +466,9 @@ void ClearInvCommFaultFlags(void)
     inv_commpointer = 0;
 
     M042 = 0;
-    M044 = 0;
+    /* M044 general fault: cleared only by M018 / ApplyFaultResetMarkers, not inv comm reset */
 
-    if ((Error_No == 14) || (Error_No == 15))
+    if ((Error_No == 14) || (Error_No == 15) || (Error_No == ERR_DRIVE_STSWD))
         Error_No = 0;
 
     ErrorLatch_ClearInvComm();
