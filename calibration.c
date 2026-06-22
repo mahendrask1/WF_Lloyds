@@ -796,6 +796,7 @@ if(Calib_status ==3)
 //                Print_String(&calib_string_ptr,line2,0,font16,0);   // 0 % load value
 //                zero_count_cal= Scale_Weight    ;
 
+
 */
                 full_load_ch2=((Present_Count_ch2 -zero_load_ch2)*scale_cap2);
                 full_load_ch2_Q = full_load_ch2 / Calib_Load_ch2;             // Calib_Load is the weight we are entering

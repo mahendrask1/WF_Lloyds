@@ -133,6 +133,12 @@ int main(void)
     VfdBootCommWarmup_ms(VFD_BOOT_WARMUP_MS);
     VfdBootSendFaultResetBeforeSuperloop(); /* VFD CW fault reset + stop */
     VfdBootPostWarmupInit();                /* WF markers, latches, comm flags */
+    /* Prime Dac* before first VEAVE AO slot in superloop */
+    Anlog_Out();
+    if (AO_Nos > 0)
+        Anlog_Out2();
+    if (AO_Nos > 1)
+        Anlog_Out3();
 
     loop_forever:
     {

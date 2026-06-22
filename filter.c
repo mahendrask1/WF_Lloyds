@@ -202,7 +202,7 @@ void Anlog_Out2(void)
                 /* Reason: AO changes to max value i.e. 20mA when load drops below Min_Load or Zero_Load*/
             if(BL_avg < zero_load)        //msk changed this 03-nov-2025
                 {
-                    Dac2_Val = Min_Count_Channel1;//bug fix from ver1.H 12/03/23 by PG
+                    Dac2_Val = Min_Count_Channel2;
                 }
                 else
                 {
@@ -272,7 +272,7 @@ void Anlog_Out3(void)
                 /* Reason:AO changes to max value i.e. 20mA when load drops below Min_Load or Zero_Load*/
             if(BL_avg < zero_load)        //msk changed this 03-nov-2025
                 {
-                    Dac3_Val = Min_Count_Channel1;//bug fix from ver1.H 12/03/23 by PG
+                    Dac3_Val = Min_Count_Channel3;
                 }
                 else
                 {

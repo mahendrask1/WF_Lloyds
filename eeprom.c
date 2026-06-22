@@ -232,6 +232,9 @@ void     save_AO_calib_val(void)
 //    bytes_written=0;
 //    eeprom_write_block(1616,(char*)AO_val,12,0,2);
     eeprom_write_array(1600,(unsigned char*)AO_cal_Values,12);
+    Dac1_SpanCounts = (Max_Count_Channel1 - Min_Count_Channel1);
+    Dac2_SpanCounts = (Max_Count_Channel2 - Min_Count_Channel2);
+    Dac3_SpanCounts = (Max_Count_Channel3 - Min_Count_Channel3);
 
     //ytes_written=320;//initialize to 320 so that EEPROM does not write
 

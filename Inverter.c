@@ -52,8 +52,17 @@ bool comfail=false;
 static unsigned char prev_start_cmd_m066 = 0;
 static unsigned char prev_check_start = 0xFF;
 static unsigned char inv_commpointer = 0; /* msk29-may-26: bus slot seq reset on comm recovery */
+static unsigned char aio_iocomsts = 0;    /* AO slot state; reset with inv comm recovery */
+static unsigned char vfd_boot_warmup_active = 0; /* skip AO/DIO during VFD boot warmup */
 
-#define INV_RX_TIMEOUT_TICKS  10U  /* 10 x 5 ms Timer0 tick = ~50 ms no-progress timeout msk 19-jun-2026 */
+#define AO_RESPONSE_TIMEOUT_TICKS  50U /* 50 x 5 ms = 250 ms (WF3_AO reference) */
+
+static void ResetAoCommState(void)
+{
+    aio_iocomsts = 0;
+}
+
+#define INV_RX_TIMEOUT_TICKS  14U  /* 14 x 5 ms Timer0 tick = 70 ms no-progress timeout msk 19-jun-2026 */
 
 /* Two consecutive matching VFD DI reads before commit (boot warmup handles 1 s settle). */
 #define VFD_DI_STABLE_READS   2U
@@ -189,11 +198,13 @@ void VfdBootCommWarmup_ms(unsigned int duration_ms)
     if (total_ticks == 0)
         total_ticks = 1;
 
+    vfd_boot_warmup_active = 1;
     start = iocomcounts;
     while ((uint16_t)(iocomcounts - start) < total_ticks) {
         Invter_ModCom();
-        VfdWaitIocountsTicks(1);
+        VfdWaitIocountsTicks(2);
     }
+    vfd_boot_warmup_active = 0;
 }
 
 #define VFD_BOOT_TXRX_TIMEOUT_TICKS  200U  /* 1 s @ 5 ms Timer0 tick */
@@ -464,6 +475,7 @@ void ClearInvCommFaultFlags(void)
     Invter2_Status = 1;
     DIO_ModBusIdx = -1;
     inv_commpointer = 0;
+    ResetAoCommState();
 
     M042 = 0;
     /* M044 general fault: cleared only by M018 / ApplyFaultResetMarkers, not inv comm reset */
@@ -686,40 +698,39 @@ bool AIO_Comm(void)
 {
 #define MAXAOERR 25
     bool iocommover = true;
-    static unsigned char iocomsts=0;
     unsigned char resp;
     int i;
 if((AO_Type !=0)&&(AO_Type !=1))
 {
-    iocomsts = 0;
+    aio_iocomsts = 0;
     iocomerrcnts = 0;
     return true;
 }
 //if AO_Type is not 0 or 1, its not AO module and we dont 
 // need to send AO query
-    switch (iocomsts)
+    switch (aio_iocomsts)
     {
         case 0:
-            //for (i = 0; i < 2000; i++) {;}
+            for (i = 0; i < 2000; i++) {;} /* RS485 bus settle before AO TX (WF3_AO) */
             sendAOquery(false);
             iocomcounts = 0;
             response_time = 0;
             comfail = false;
             iocommover = false;
-            iocomsts = 1;
+            aio_iocomsts = 1;
             break;
         case 1:
             resp = rec_Aioresponse();
             if (resp == 0)
             {
-                if (response_time > 30) /* 30 x 5 ms = ~150 ms AO response timeout */
+                if (response_time > AO_RESPONSE_TIMEOUT_TICKS)
                 {
                     comfail = true;
                     if (iocomerrcnts++ > MAXAOERR)
                         iocomerrcnts = MAXAOERR;
                     iocomcounts = 0;
                     iocommover = true;
-                    iocomsts = 0;
+                    aio_iocomsts = 0;
                 }
                 else
                 {
@@ -737,13 +748,13 @@ if((AO_Type !=0)&&(AO_Type !=1))
                 else if (iocomerrcnts++ > MAXAOERR)
                     iocomerrcnts = MAXAOERR;
                 iocomcounts = 0;
-                iocomsts = 0;
+                aio_iocomsts = 0;
                 DIO_ModBusIdx = -1;
                 tx_over = 0;
             }
             if (iocomerrcnts >= MAXAOERR)
             {
-                iocomsts = 0;
+                aio_iocomsts = 0;
                 iocomerrcnts = 0;
                 AO_Comm_Fault = 1;
                 Error_No = 17;
@@ -803,6 +814,9 @@ if((AO_Type !=0)&&(AO_Type !=1))
 /* AO/DIO bus slots before VFD; return 1 if this scan stops before VFD TX */
 static unsigned char Invter_RunAoDioSlot(int spin_i)
 {
+    if (vfd_boot_warmup_active)
+        return 0; /* VFD-only boot warmup — do not send VEAVE AO with Dac* unset */
+
     if (inv_commpointer == 0)
     {
         if (AIO_Comm() == false)
@@ -867,10 +881,7 @@ void Invter_ModCom(void)
                 else if (inv_commpointer < 15)
                     {inv_commpointer++;}
                 else
-                {
-                    inv_commpointer = 0;
-                    break; /* gap complete; start AO on next scan, no extra VFD */
-                }
+                    {inv_commpointer = 0;} /* gap complete; wrap like WF3_AO commpointer */
 
                 if (M066 == 1)
                 {
@@ -1426,7 +1437,7 @@ void Invter2_ModCom(void)
                     switch (Inv_1)
                     {
                     case 1:
-                        if (M008 == 1) Start_Stop_Inv = 6;
+                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 6;
                         if (Read_count_AtvReg_1 == 0)
                         {
                             SW_add_hi = 0x0C;
@@ -1446,7 +1457,7 @@ void Invter2_ModCom(void)
                         fault_code = 0x28;
                         break;
                     case 2:
-                        if (M008 == 1) Start_Stop_Inv = 1;
+                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 1;
                         SW_add_hi = 0x21;
                         SW_add_lw = 0x00;
                         CW_add_hi = 0x20;
@@ -1459,7 +1470,7 @@ void Invter2_ModCom(void)
                     case 7:
                     case 8:
                     case 3:
-                        if (M008 == 1) Start_Stop_Inv = 0x76;
+                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 0x76;
                         SW_add_hi = 0x00;
                         SW_add_lw = 0x03;
                         CW_add_hi = 0x00;
@@ -1470,7 +1481,7 @@ void Invter2_ModCom(void)
                         break;
                     case 5:
                     case 4:
-                        if (M008 == 1) Start_Stop_Inv = 0;
+                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 0;
                         SW_add_hi = 0x00;
                         SW_add_lw = 0x20;
                         CW_add_hi = 0x00;

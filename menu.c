@@ -1674,6 +1674,11 @@ void Menu_ServiceInvComms(void)
 {
     if ((scan_count % 2) == 1)
     {
+        Anlog_Out();
+        if (AO_Nos > 0)
+            Anlog_Out2();
+        if (AO_Nos > 1)
+            Anlog_Out3();
         if (SIO_Interface == 1)
             modbus();
         DIO_modbus();

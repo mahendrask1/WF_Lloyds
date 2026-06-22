@@ -522,7 +522,10 @@ bool UpdateErrorStatus()
     {
         ApplyWfDriveFaultTrip();
         flag = true;
+        flag = true;
+
     }
+
     if ((M020 == 0)) 
      //msk PF drive fault in field/stop like WF 17-may-2026
     { //m20= drive healthy-pf, 0=fault
@@ -558,6 +561,32 @@ bool UpdateErrorStatus()
 //-------------------------------------------------------------------------------------
 void Ext_WF_Controls()
 {
+    static bool PrvRemoteLocalMode;
+    static char rl_mode_init = 0;
+    bool CurrentRemoteLocalMode;
+
+    CurrentRemoteLocalMode = (M008 == 1) ? true : false;
+    if (rl_mode_init == 0)
+    {
+        PrvRemoteLocalMode = CurrentRemoteLocalMode;
+        rl_mode_init = 1;
+    }
+    else if (PrvRemoteLocalMode != CurrentRemoteLocalMode)
+    {
+        //msk 22-jun-26: force stop when rem/local/rem transition; fresh start required
+        PrvRemoteLocalMode = CurrentRemoteLocalMode;
+        Start_Stop_status = STOP;
+        M066 = 0;
+        M011 = 0;   //local start =0 (Stopped)
+        M012 = 1;   //local stop =1 (stopped)
+        M013 = 0;   //local pf start =0 (Stopped)
+        M014 = 1;   //local pf stop =1 (stopped)
+        M016 = 0;   //remote start/stop =0 (Stopped)    
+        M067 = 0;   //pre-feeder start =0 (Stopped)
+        Zero_Tacho_Feed_Buffer_Flag = 2;
+        return;
+    }
+
 //    if(M044 == 1)
 //   {
 //       return;//General Fault
@@ -593,8 +622,9 @@ void Ext_WF_Controls()
             else
             {
                 Start_Stop_status = STOP;
-                M066 = 0;//Stop 
+                M066 = 0;// remote Stop 
                 Zero_Tacho_Feed_Buffer_Flag = 2;
+
             }
             Current_Setpoint = External_Setpoint;//
             //Interlocked mode volometric or gravimetric will
@@ -624,7 +654,7 @@ void Ext_WF_Controls()
             Current_Setpoint = Capacity;
         M051 = 0; // Output Marker M051;0-Remote ; 1-Local(Field mode)
     }// if(M008==1)//Remote mode
-    else if(M008 == 0)    // Local/field panel (M008 from I024: 0=local)
+    else if(M008 == 0)    // Local/field panel (M008: 0=local, 1=remote; selector typically I026)
     {
        // Mode_Status = Local;
         M051 = 1; // Output Marker M051;0-Remote ; 1-Local
@@ -738,7 +768,6 @@ void Ext_WF_Controls()
         else
             BIN_PF_Start_Status = 0;
     }//if (Pre_Hopper == 1) ends
- 
 }//End of Ext_WF_Controls()
 
 //-------------------------------------------------------------------------------------
