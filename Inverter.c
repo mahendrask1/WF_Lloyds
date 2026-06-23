@@ -63,6 +63,7 @@ static void ResetAoCommState(void)
 }
 
 #define INV_RX_TIMEOUT_TICKS  14U  /* 14 x 5 ms Timer0 tick = 70 ms no-progress timeout msk 19-jun-2026 */
+#define INV_COMM_FAULT_ERR_GEN_MAX  100U /* msk 22-06-2026: Err_Gen/Err_Gen2 before Inv com fault 14/15 */
 
 /* Two consecutive matching VFD DI reads before commit (boot warmup handles 1 s settle). */
 #define VFD_DI_STABLE_READS   2U
@@ -1185,7 +1186,7 @@ void Invter_ModCom(void)
                                     if((DIO_Module == 1)||(DIO_Module == 2) || ((Inv_1==1)||(Inv_1==2)||(Inv_1==3)||(Inv_1==4)||(Inv_1==5)||(Inv_1==6)||(Inv_1==7)||(Inv_1==8)))
                                     {
                                         Dev_ID = 3;
-                                        if(Err_Gen>50)
+                                        if(Err_Gen>INV_COMM_FAULT_ERR_GEN_MAX)
                                         {
                                             Err_Counter_Inv = 0;
                                             InvComm_SetComError(14); /* msk29-may-26 */
@@ -1304,7 +1305,7 @@ void Invter_ModCom(void)
                                 ((Inv_1 == 1) || (Inv_1 == 2) || (Inv_1 == 3) || (Inv_1 == 4) ||
                                  (Inv_1 == 5) || (Inv_1 == 6) || (Inv_1 == 7) || (Inv_1 == 8)))
                                 {Dev_ID = 3;}// reroute Dev_ID CRC-mismatch backoff path
-                            if (Err_Gen > 50)
+                            if (Err_Gen > INV_COMM_FAULT_ERR_GEN_MAX)
                             {
                                 Err_Counter_Inv = 0;
                                 InvComm_SetComError(14);
@@ -1332,7 +1333,7 @@ void Invter_ModCom(void)
                             ((Inv_1 == 1) || (Inv_1 == 2) || (Inv_1 == 3) || (Inv_1 == 4) ||
                              (Inv_1 == 5) || (Inv_1 == 6) || (Inv_1 == 7) || (Inv_1 == 8)))
                             Dev_ID = 3;
-                        if (Err_Gen > 50)
+                        if (Err_Gen > INV_COMM_FAULT_ERR_GEN_MAX)
                         {
                             Err_Counter_Inv = 0;
                             InvComm_SetComError(14);
@@ -1437,7 +1438,7 @@ void Invter2_ModCom(void)
                     switch (Inv_1)
                     {
                     case 1:
-                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 6;
+                        if (M008 == 1) Start_Stop_Inv = 6;
                         if (Read_count_AtvReg_1 == 0)
                         {
                             SW_add_hi = 0x0C;
@@ -1457,7 +1458,7 @@ void Invter2_ModCom(void)
                         fault_code = 0x28;
                         break;
                     case 2:
-                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 1;
+                        if (M008 == 1) Start_Stop_Inv = 1;
                         SW_add_hi = 0x21;
                         SW_add_lw = 0x00;
                         CW_add_hi = 0x20;
@@ -1470,7 +1471,7 @@ void Invter2_ModCom(void)
                     case 7:
                     case 8:
                     case 3:
-                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 0x76;
+                        if (M008 == 1) Start_Stop_Inv = 0x76;
                         SW_add_hi = 0x00;
                         SW_add_lw = 0x03;
                         CW_add_hi = 0x00;
@@ -1481,7 +1482,7 @@ void Invter2_ModCom(void)
                         break;
                     case 5:
                     case 4:
-                        if (VFD_SEND_STOP_CW) Start_Stop_Inv = 0;
+                        if (M008 == 1) Start_Stop_Inv = 0;
                         SW_add_hi = 0x00;
                         SW_add_lw = 0x20;
                         CW_add_hi = 0x00;
@@ -1648,7 +1649,7 @@ void Invter2_ModCom(void)
                                         ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
                                          (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
                                         Dev_ID = 1;
-                                    if (Err_Gen2 > 50)
+                                    if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX)
                                     {
                                         Err_Counter_Inv2 = 0;
                                         InvComm_SetComError(15);
@@ -1758,7 +1759,7 @@ void Invter2_ModCom(void)
                                 ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
                                  (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
                                 Dev_ID = 1;
-                            if (Err_Gen2 > 50)
+                            if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX)
                             {
                                 Err_Counter_Inv2 = 0;
                                 InvComm_SetComError(15);
@@ -1786,7 +1787,7 @@ void Invter2_ModCom(void)
                             ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
                              (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
                             Dev_ID = 1;// reroute DEV main INV assembling timeout
-                        if (Err_Gen2 > 50)
+                        if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX)
                         {
                             Err_Counter_Inv2 = 0;
                             InvComm_SetComError(15);

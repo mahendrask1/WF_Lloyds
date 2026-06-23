@@ -164,7 +164,7 @@ void ResetInvCommState(void); /* msk29-may-26 */
 void ClearInvCommFaultFlags(void); /* inv comm fault clear without VFD DI debounce reset */
 void ResetInvCommAfterOfflineMenu(void); /* msk29-may-26 */
 void ResetVfdDiInputFilter(void); /* debounce I024-I029 after boot or menu */
-#define VFD_BOOT_WARMUP_MS    1000U
+#define VFD_BOOT_WARMUP_MS    1500U
 void VfdBootCommWarmup_ms(unsigned int duration_ms); /* poll VFD before main loop */
 void VfdBootSendFaultResetBeforeSuperloop(void); /* FC10 fault reset + stop before main loop */
 void VfdDiSanitizeStartMarkers(void); /* clear phantom M011 before PLC scan */

@@ -34,20 +34,71 @@ extern uint16_t New_menu_parameters[105];
 extern unsigned long Present_Count, Count_DL, Span_Count, zero_load, full_load;
 extern unsigned long Count_Max;
 extern uint16_t scan_count;
+extern uint16_t sec_counter;
 extern uint32_t Key_Input;
 extern unsigned long calib_val[8];
 extern unsigned long Count_Limit1, Count_Limit2, Count_Max, Count_Min;
 extern unsigned int Tacho_Counter;
 extern unsigned int Belt_Speed;
+extern volatile uint8_t flag;
 /* Extern Variables*/
+
 /*New Variables*/
 float ZERO_VALUE, ZERO_ERROR_VALUE, ZERO_ERROR_PERSCENT;
 unsigned char ZERO_STATUS;
 extern char Status_No, Error_No;
-unsigned long Belt_REV_COUNT, Belt_Rev_Count_Value;
 
 extern char Oled_flag, Rows_clear;
+
+#define ZERO_SCAN_TICKS_PER_SEC  200U /* msk 22-06-2026: Timer0 5 ms tick; 200 ticks = 1 s */
+
+static uint32_t zero_start_total_ticks;
+static uint32_t zero_duration_ticks;
+static unsigned long zero_sample_count;
+
 /*New Variables*/
+
+/* msk 22-06-2026: monotonic 5 ms time base from sec_counter + scan_count (not response_time) */
+static uint32_t Zeroing_GetTotalScanTicks(void)
+{
+    return ((uint32_t)sec_counter * (uint32_t)ZERO_SCAN_TICKS_PER_SEC) + (uint32_t)scan_count;
+}
+
+static void Zeroing_FinishCapture(void)
+{
+    if (zero_sample_count == 0)
+        zero_sample_count = 1;
+
+    ZERO_ERROR_VALUE = (float)((float)ZERO_VALUE / (float)zero_sample_count);
+    ZERO_ERROR_PERSCENT = (float)((float)(ZERO_ERROR_VALUE * 100) / (float)(full_load - zero_load));
+    if ((unsigned int)((ZERO_ERROR_VALUE - (unsigned int)ZERO_ERROR_VALUE) * 10) > 4) {
+        ZERO_ERROR_VALUE = ZERO_ERROR_VALUE + 1;
+    }
+
+    if ((unsigned int)(ZERO_ERROR_PERSCENT * 10) <= Zero_Limit) {
+        ZERO_STATUS = 3;
+    }
+    if ((unsigned int)(ZERO_ERROR_PERSCENT * 10) > Zero_Limit) {
+        ZERO_STATUS = 4;
+    }
+}
+
+/* msk 22-06-2026: service VFD/DIO/PLC on 5 ms tick while zero result screen blocks main */
+static void Zeroing_PollCommsAndKeys(void)
+{
+    if (flag == 0)
+        return;
+    flag = 0;
+    Menu_ServiceInvComms();
+    key_check_routine();
+}
+
+static void Zeroing_WaitForKey(void)
+{
+    while (Key_Input == 0xFF) {
+        Zeroing_PollCommsAndKeys();
+    }
+}
 
 void Zeoring(void);
 
@@ -134,9 +185,7 @@ void Zeroing_Display(void)
         ZERO_STATUS = 7;
     }
     if (ZERO_STATUS == 6) {
-        while (Key_Input == 0xFF) {  //stay here until any key pressed
-            key_check_routine();
-        }
+        Zeroing_WaitForKey();
         if (Key_Input == CL) { //if any key is pressed  then goto online menu
             ZERO_STATUS = 0;
             return;
@@ -158,9 +207,7 @@ void Zeroing_Display(void)
         }
     }
     if (ZERO_STATUS == 7) {
-        while (Key_Input == 0xFF) {  //stay here until any key pressed
-            key_check_routine();
-        }
+        Zeroing_WaitForKey();
         if (Key_Input != 0xFF) { //if any key is pressed  then goto online menu
             ZERO_STATUS = 0;
             return;
@@ -168,49 +215,47 @@ void Zeroing_Display(void)
     }
 }
 
-void Zeoring(void)  //calculations of zero value called every 50ms i.e 20th scancount
+void Zeoring(void)  // dynamic zero; load average each call; duration on Timer0 5 ms ticks
 {
+    float rev_time_sec;
+    float zero_time_sec;
+    uint32_t elapsed_ticks;
+
     if (ZERO_STATUS == 0) {
         return;
     }
     if (ZERO_STATUS == 1) {
-        Belt_REV_COUNT = ((float)(Rev_Time * Tacho_Freq * 6.1) / (Belt_Speed)); // (Rev_Time * Tacho_Freq * 2 )/ Tacho_Actual
-        Belt_Rev_Count_Value = Belt_REV_COUNT;
+        /* msk 22-06-2026: Rev_Time (E4.1 s) at Tacho_Freq; scale wall time by Belt_Speed at zero start */
+        if (Belt_Speed == 0) {
+            ZERO_STATUS = 5;
+            return;
+        }
+        rev_time_sec = (float)Rev_Time / 10.0f;
+        zero_time_sec = rev_time_sec * ((float)Tacho_Freq / (float)Belt_Speed);
+        zero_duration_ticks = (uint32_t)(zero_time_sec * (float)ZERO_SCAN_TICKS_PER_SEC + 0.5f);
+        if (zero_duration_ticks < 2U)
+            zero_duration_ticks = 2U;
+        zero_start_total_ticks = Zeroing_GetTotalScanTicks();
+        zero_sample_count = 0;
         ZERO_STATUS = 2;
         ZERO_VALUE = 0;
         Clear_LCD();
     }
     if (ZERO_STATUS == 2) {
         ZERO_VALUE = ZERO_VALUE + ((float)(Present_Count) - (float)(zero_load));
+        zero_sample_count++;
 
         if (Error_No == 3 /*TACHO_Fault==1*/) {
             ZERO_STATUS = 5;
             return;
         }
 
-        Belt_REV_COUNT = --Belt_REV_COUNT;
-
-        if (Belt_REV_COUNT != 0) {
+        /* msk 22-06-2026: stop on Timer0 5 ms ticks (sec_counter*200 + scan_count), not Zeoring call count */
+        elapsed_ticks = Zeroing_GetTotalScanTicks() - zero_start_total_ticks;
+        if (elapsed_ticks < zero_duration_ticks)
             return;
-        }
 
-        if (Belt_REV_COUNT == 0) {
-            ZERO_ERROR_VALUE = (float)((float)ZERO_VALUE / Belt_Rev_Count_Value);
-            ZERO_ERROR_PERSCENT = (float)((float)(ZERO_ERROR_VALUE * 100) / (float)(full_load - zero_load));
-            if ((unsigned int)((ZERO_ERROR_VALUE - (unsigned int)ZERO_ERROR_VALUE) * 10) > 4) {
-                ZERO_ERROR_VALUE = ZERO_ERROR_VALUE + 1;
-            }
-            if ((unsigned int)((ZERO_ERROR_VALUE - (unsigned int)ZERO_ERROR_VALUE) * 10) <= 4) {
-                ZERO_ERROR_VALUE = ZERO_ERROR_VALUE;
-            }
-        }
-
-        if ((unsigned int)(ZERO_ERROR_PERSCENT * 10) <= Zero_Limit) {  //Zero_Limit/10 because to get decimal point value as entered
-            ZERO_STATUS = 3;
-        }
-        if ((unsigned int)(ZERO_ERROR_PERSCENT * 10) > Zero_Limit) {  //Zero_Limit/10 because to get decimal point value as entered
-            ZERO_STATUS = 4;
-        }
+        Zeroing_FinishCapture();
     }
     if (ZERO_STATUS == 3) {
         //                                                    if(ZERO_ERROR_VALUE > 0 )
