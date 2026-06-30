@@ -146,6 +146,7 @@ void key_action (void)
             if(Start_Stop_status == START)        //if Start show this Main Menu on screen
             {
                 Lcd_ReinitForMenu(); /* msk29-may-26 */
+                InvComm_NotifyOfflineMenuEnter(); /* msk 19-Jun-2026: prime comm reset edge */
                 Check_Start=20;
                 display_cursor = 1;
                 if(menu_pointer == 0)
@@ -720,6 +721,7 @@ void key_action (void)
                     New_menu_parameters[40]=Online_menu_parameters[14] ;
                     scan_count_deviation_monitor = (( Dev_Time * 1000 ) / 2000 );
                     scan_count_deviation = scan_count_deviation_monitor ;
+                    ResetInvCommAfterOfflineMenu(); /* msk 19-Jun-2026: online menu exit — ACS reset */
                 }
                 if(Submenu_flag ==1) //if displaying online SubMenu
                 {

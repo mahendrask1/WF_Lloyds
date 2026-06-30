@@ -87,8 +87,79 @@ const char *error_msg[21][20] = {
     {"Inv2 Com Error"},   /* Err_no = 15 */
     {"Loadcell 2 Fault"}, /* Err_no = 16 */
     {"AO Comm Fail"},     /* Err_no = 17 */
-    {"Drive Fault(Sts Wd)"}, /* Err_no = 18 — VFD Modbus status word */
+    {"VFD Err-STSWD "},   /* Err_no = 18 — fallback; dynamic via Error_PrintLine6 */
 };
+
+/* msk 19-Jun-2026: ACS580 fault reg 400090 → 6-char line6 tag for VFD Err-xxxxxx */
+typedef struct {
+    uint16_t code;
+    const char tag6[7];
+} VfdFaultTagEntry;
+
+static const VfdFaultTagEntry vfd_fault_tag_table[] = {
+    { 2310, "OVRCUR" },
+    { 2311, "OVR1PH" },
+    { 2340, "SHORT " },
+    { 3130, "INPHAS" },
+    { 3210, "EARTH " },
+    { 3220, "ERTHLD" },
+    { 4210, "IGBTOT" },
+    { 4290, "COOL  " },
+    { 5090, "FAN   " },
+    { 5710, "OUTPH " },
+    { 6681, "EFBCOM" },
+    { 7121, "STALL " },
+    { 7311, "PHLOSS" },
+    { 7381, "MLOAD " },
+    { 8110, "INTRN " },
+    { 0xA7CE, "EFBWRN" },
+};
+
+static char vfd_err_display_line[20];
+
+static void VfdFault_TagFromCode(uint16_t code, char *out6)
+{
+    unsigned int i;
+    unsigned int n;
+
+    if (code == 0) {
+        memcpy(out6, "STSWD ", 6);
+        out6[6] = '\0';
+        return;
+    }
+    n = (unsigned int)(sizeof(vfd_fault_tag_table) / sizeof(vfd_fault_tag_table[0]));
+    for (i = 0; i < n; i++) {
+        if (vfd_fault_tag_table[i].code == code) {
+            memcpy(out6, vfd_fault_tag_table[i].tag6, 6);
+            out6[6] = '\0';
+            return;
+        }
+    }
+    memcpy(out6, "UNKNWN", 6);
+    out6[6] = '\0';
+}
+
+static void Error_BuildVfdFaultLine(void)
+{
+    char tag[7];
+
+    VfdFault_TagFromCode(vfd_fault_reg_latched, tag);
+    sprintf(vfd_err_display_line, "VFD Err-%s", tag);
+}
+
+void Error_PrintLine6(unsigned char err_no, char start_row, char start_col,
+                      char font_size, char underline_no)
+{
+    static const char *dyn_ptr;
+
+    if (err_no == (unsigned char)ERR_DRIVE_STSWD) {
+        Error_BuildVfdFaultLine();
+        dyn_ptr = vfd_err_display_line;
+        Print_String2(&dyn_ptr, start_row, start_col, font_size, underline_no);
+        return;
+    }
+    Print_String2(error_msg[err_no], start_row, start_col, font_size, underline_no);
+}
 
 #define ERROR_MIN_CODE 1
 #define ERROR_MAX_CODE 18
@@ -168,8 +239,14 @@ static void ErrorLatch_Collect(void)
     if (M046 == 1)
         ErrorLatch_Add(13);
     /* Err14/15: Inv comm timeout/CRC only — not INV_Error_Flag (status word uses ERR_DRIVE_STSWD) */
-    if (INV2_Error_Flag == 1)
+    if (Inv1_Comm_Fault == 1)
+        ErrorLatch_Add(14);
+    else
+        error_latch[14] = 0;
+    if ((Inv2_Comm_Fault == 1) || (INV2_Error_Flag == 1))
         ErrorLatch_Add(15);
+    else
+        error_latch[15] = 0;
     if (M062 == 1)
         ErrorLatch_Add(16);
     if (AO_Comm_Fault == 1)
@@ -252,7 +329,7 @@ static void ErrorLine_Refresh(void)
         if ((M077 == 1) && (Error_No == 0) && (Pre_Hopper == 1))
             Print_String2(ACAL_Display[3], line6, 0, font10, 0);
         else
-            Print_String2(error_msg[(unsigned char)Error_No], line6, 0, font10, 0);
+            Error_PrintLine6((unsigned char)Error_No, line6, 0, font10, 0);
     }
 }
 
@@ -267,7 +344,29 @@ void ErrorLatch_ClearAll(void)
     error_rotate_last_scan = scan_count;
     Modbus_Comm_Fault = 0;
     AO_Comm_Fault = 0;
+    Inv1_Comm_Fault = 0;
+    Inv2_Comm_Fault = 0;
+    VfdFault_ClearRegCode();
     Error_No = 0;
+}
+
+static void ErrorLatch_AdvanceIfShowing(unsigned char cleared_idx)
+{
+    if (error_display_index != cleared_idx)
+        return;
+    {
+        unsigned char next = ErrorLatch_FindNext(ERROR_MIN_CODE);
+        if (next == 0)
+        {
+            Error_No = 0;
+            error_display_index = 0;
+        }
+        else
+        {
+            error_display_index = next;
+            Error_No = (char)next;
+        }
+    }
 }
 
 /* msk29-may-26: clear latched Inv1/Inv2 com errors on comm reset */
@@ -276,6 +375,7 @@ void ErrorLatch_ClearInvComm(void)
     error_latch[14] = 0;
     error_latch[15] = 0;
     error_latch[ERR_DRIVE_STSWD] = 0;
+    VfdFault_ClearRegCode();
     if ((error_display_index == 14) || (error_display_index == 15)
         || (error_display_index == ERR_DRIVE_STSWD))
     {
@@ -291,6 +391,16 @@ void ErrorLatch_ClearInvComm(void)
             Error_No = (char)next;
         }
     }
+}
+
+/* msk 19-Jun-2026: clear WF Modbus drive fault display (M042 path — not M019/M045 DIO) */
+void ErrorLatch_ClearWfDriveModbusFault(void)
+{
+    error_latch[ERR_DRIVE_STSWD] = 0;
+    VfdFault_ClearRegCode();
+    ErrorLatch_AdvanceIfShowing(ERR_DRIVE_STSWD);
+    if ((Error_No == (char)ERR_DRIVE_M019) || (Error_No == (char)ERR_DRIVE_STSWD))
+        Error_No = 0;
 }
 
 uint16_t ErrorLatch_GetBitmapLow(void)

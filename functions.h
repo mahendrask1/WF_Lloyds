@@ -178,6 +178,7 @@ void Read_adc1_ltc1288(void);
 void Read_adc2_ltc1288(void);
 void AI_adc1_avg_cal(void);
 void AI_adc2_avg_cal(void);
+void AiBuffers_ClearAll(void); /* msk 19-Jun-2026: zero AI on AIO comm fault */
 /****************************************/
 
 /**************setpoint/display**********/

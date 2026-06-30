@@ -303,7 +303,7 @@ void Online_routine()
             Print_Online_Menu_values(increment);
             if(ACAL_Status==0)
             {
-                Print_String2(error_msg[Error_No],line6,0,font10,0);                 //error display    LINE5     						 			
+                Error_PrintLine6((unsigned char)Error_No, line6, 0, font10, 0);     						 			
                 if((M077==1)&&(Error_No==0)&&(Pre_Hopper==1))
                  Print_String2(ACAL_Display[3],line6,0,font10,0);      //Auto cal status display    LINE5     						 			
             }

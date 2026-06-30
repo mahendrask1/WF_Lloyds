@@ -1,4 +1,4 @@
-﻿/* adc12bit.c */
+/* adc12bit.c */
 #include "adc.h"
 #include "dac.h"
 #include "GPIO_LPC17xx.h"
@@ -440,6 +440,30 @@ void AI_adc2_avg_cal()
             AI2_pointer++;
             AI2_avg = AI2_sum / AI2_buffer;
 
+}
+
+/* msk 19-Jun-2026: AIO comm fault — clear AI averages so setpoint is not last good read */
+void AiBuffers_ClearAll(void)
+{
+    unsigned char k;
+
+    AI_Value = 0;
+    AI1_Value = 0;
+    AI2_Value = 0;
+    AI_avg = 0;
+    AI1_avg = 0;
+    AI2_avg = 0;
+    AI_sum = 0;
+    AI1_sum = 0;
+    AI2_sum = 0;
+    AI_pointer = 0;
+    AI1_pointer = 0;
+    AI2_pointer = 0;
+    for (k = 0; k < AI_buffer; k++) {
+        AI_reg[k] = 0;
+        AI1_reg[k] = 0;
+        AI2_reg[k] = 0;
+    }
 }
 
 /*

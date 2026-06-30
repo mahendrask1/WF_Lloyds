@@ -17,6 +17,8 @@ uint16_t iocomerrcnts = 0;   /* io module comm error counts */
 uint16_t iocomcounts = 0;    /* counts increase in Timer0 IRQ every 5 ms */
 uint16_t response_time;      /* Timer0 ticks; 1 count = 5 ms */
 unsigned char AO_Comm_Fault = 0;
+unsigned char Inv1_Comm_Fault = 0;
+unsigned char Inv2_Comm_Fault = 0;
 
 extern unsigned char Rx_byte_count,Inv_Op_current,Inv1_Op_current;
 extern unsigned char DIO_ModBusMessage[],DIO_ModData[];
@@ -151,6 +153,142 @@ static void Acs380560580_UnpackFc03(void)
     INV_modarray_rd[7] = DIO_ModBusMessage[9];
     INV_modarray_rd[6] = DIO_ModBusMessage[10];
     INV_modarray_rd[8] = DIO_ModBusMessage[14];
+}
+
+/* msk 30-Jun-2026: ACS two-step FC03 — fault reg 0x0059 first, then status 0x0003; EFB comm fault no trip */
+#define ACS_MODBUS_FAULT_REG_LO    0x59U   /* holding 400090 */
+#define ACS_EFB_COMM_FAULT_6681    6681U   /* ACS580 EFB comm loss fault */
+#define ACS_EFB_COMM_WARN_A7CE     0xA7CEU /* ACS580 EFB comm loss warning */
+
+static unsigned char acs_inv_read_step;
+static unsigned char acs_inv2_read_step;
+static unsigned char acs_inv_fault_reg_valid;
+static unsigned char acs_inv2_fault_reg_valid;
+static uint16_t acs_inv_fault_word;
+static uint16_t acs_inv2_fault_word;
+static unsigned char acs_efb_reset_pending;
+static unsigned char acs_efb_reset_inv2_pending;
+
+static void InvComm_SetComError(unsigned char inv_num); /* msk 19-Jun-2026: fwd decl — ACS trip helpers call before def */
+
+static int InvIsAcsFamily(unsigned char inv_type)
+{
+    return (inv_type == 3 || inv_type == 6 || inv_type == 7 || inv_type == 8);
+}
+
+static int AcsFaultCodeIsEfbCommOnly(uint16_t fault_word)
+{
+    if (fault_word == ACS_EFB_COMM_FAULT_6681)
+        return 1;
+    if (fault_word == ACS_EFB_COMM_WARN_A7CE)
+        return 1;
+    return 0;
+}
+
+static void AcsConfigureFc03ReadStep(unsigned char read_step,
+                                     unsigned char *sw_hi, unsigned char *sw_lo,
+                                     unsigned char *reg_cnt)
+{
+    if (read_step == 0) {
+        *sw_hi = 0x00;
+        *sw_lo = ACS_MODBUS_FAULT_REG_LO;
+        *reg_cnt = 0x01;
+        return;
+    }
+    *sw_hi = 0x00;
+    *sw_lo = 0x03;
+    *reg_cnt = 0x06;
+}
+
+uint16_t vfd_fault_reg_latched;
+
+void VfdFault_LatchRegCode(uint16_t code)
+{
+    vfd_fault_reg_latched = code;
+}
+
+void VfdFault_ClearRegCode(void)
+{
+    vfd_fault_reg_latched = 0;
+}
+
+/* msk 19-Jun-2026: ACS EFB comm fault — reset drive, clear trip/error, no M042/M044 */
+static void AcsInv1ClearWfDriveFaultMarkers(void)
+{
+    M042 = 0;
+    if (M045 == 0)
+        M044 = 0;
+    ErrorLatch_ClearWfDriveModbusFault();
+}
+
+static void AcsInv1ApplyEfbCommSuppress(void)
+{
+    acs_efb_reset_pending = 1;
+    INV_Error_Flag = 0;
+    AcsInv1ClearWfDriveFaultMarkers();
+}
+
+static void AcsInv2ApplyEfbCommSuppress(void)
+{
+    acs_efb_reset_inv2_pending = 1;
+    INV2_Error_Flag = 0;
+}
+
+static void AcsInv1ApplyRealFaultTrip(void)
+{
+    VfdFault_LatchRegCode(acs_inv_fault_word); /* msk 19-Jun-2026: latch for Err18 line6 tag */
+    INV_Error_Flag = 1;
+    M042 = 1;
+    M044 = 1;
+    Err_Counter_Inv++;
+    if ((Err_Counter_Inv % 10) == 1) {
+        Err_Gen = Err_Gen + 1;
+        Invter_Status = 1;
+        DIO_DIRN_MAX487(1);
+        DIO_ModBusIdx = -1;
+        if ((DIO_Module == 1) || (DIO_Module == 2) ||
+            ((Inv_1 == 1) || (Inv_1 == 2) || (Inv_1 == 3) || (Inv_1 == 4) ||
+             (Inv_1 == 5) || (Inv_1 == 6) || (Inv_1 == 7) || (Inv_1 == 8))) {
+            Dev_ID = 3;
+            if (Err_Gen > INV_COMM_FAULT_ERR_GEN_MAX) {
+                Err_Counter_Inv = 0;
+                InvComm_SetComError(14);
+                Err_Gen = 0;
+            }
+        }
+    }
+}
+
+static void AcsInv2ApplyRealFaultTrip(void)
+{
+    INV2_Error_Flag = 1;
+    Err_Counter_Inv2++;
+    if ((Err_Counter_Inv2 % 10) == 1) {
+        Err_Gen2 = Err_Gen2 + 1;
+        Invter2_Status = 1;
+        DIO_DIRN_MAX487(1);
+        DIO_ModBusIdx = -1;
+        if ((DIO_Module == 1) || (DIO_Module == 2) ||
+            ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
+             (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
+            Dev_ID = 1;
+        if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX) {
+            Err_Counter_Inv2 = 0;
+            InvComm_SetComError(15);
+            Err_Gen2 = 0;
+        }
+    }
+}
+
+static void AcsResetReadState(void)
+{
+    acs_inv_read_step = 0;
+    acs_inv2_read_step = 0;
+    acs_inv_fault_reg_valid = 0;
+    acs_inv2_fault_reg_valid = 0;
+    /* fault words kept until next step-0 read — avoids 0x38 trip with stale zero */
+    acs_efb_reset_pending = 0;
+    acs_efb_reset_inv2_pending = 0;
 }
 
 static void CommitVfdDiToPlc(unsigned char d24, unsigned char d25, unsigned char d26,
@@ -450,9 +588,11 @@ void Print_String(char **string, char start_row, char start_col, char font_size,
 static void InvComm_SetComError(unsigned char inv_num)
 {
     if (inv_num == 15) {
+        Inv2_Comm_Fault = 1;
         Error_No = 15;
         ErrorLatch_SetFault(15);
     } else {
+        Inv1_Comm_Fault = 1;
         Error_No = 14;
         ErrorLatch_SetFault(14);
     }
@@ -478,12 +618,14 @@ void ClearInvCommFaultFlags(void)
     inv_commpointer = 0;
     ResetAoCommState();
 
+    Inv1_Comm_Fault = 0;
+    Inv2_Comm_Fault = 0;
     M042 = 0;
     /* M044 general fault: cleared only by M018 / ApplyFaultResetMarkers, not inv comm reset */
-
-    if ((Error_No == 14) || (Error_No == 15) || (Error_No == ERR_DRIVE_STSWD))
+    AcsResetReadState(); /* msk 19-Jun-2026: ACS two-read step back to fault reg 0x0059 */
+    ErrorLatch_ClearWfDriveModbusFault();
+    if ((Error_No == 14) || (Error_No == 15))
         Error_No = 0;
-
     ErrorLatch_ClearInvComm();
 }
 
@@ -498,6 +640,13 @@ void ResetInvCommState(void)
 void ResetInvCommAfterOfflineMenu(void)
 {
     ResetInvCommState();
+    /* msk 19-Jun-2026: menu exit — queue ACS fault reset; clear orphan M044 if no drive fault */
+    if (InvIsAcsFamily(Inv))
+        acs_efb_reset_pending = 1;
+    if (InvIsAcsFamily(Inv_1))
+        acs_efb_reset_inv2_pending = 1;
+    if (M042 == 0)
+        M044 = 0;
     prev_check_start = (unsigned char)Check_Start;
 }
 
@@ -759,6 +908,8 @@ if((AO_Type !=0)&&(AO_Type !=1))
                 iocomerrcnts = 0;
                 AO_Comm_Fault = 1;
                 Error_No = 17;
+                ErrorLatch_SetFault(17); /* msk 19-Jun-2026: latch AO Comm Fail for display/trip */
+                AiBuffers_ClearAll();    /* msk 19-Jun-2026: zero AI — not last value before comm loss */
             }
             break;
     }
@@ -1011,6 +1162,12 @@ void Invter_ModCom(void)
                     default: break;
                     }// switch (Inv), M066==0
                 }// if (M066 == 0)
+                /* msk 19-Jun-2026: ACS FC03 step 0=fault 0x0059, step 1=status 0x0003 x6 */
+                if (InvIsAcsFamily(Inv)) {
+                    AcsConfigureFc03ReadStep(acs_inv_read_step,
+                                             &SW_add_hi, &SW_add_lw, &Reg_Read_Count);
+                    Rx_byte_count = (acs_inv_read_step == 0) ? 6 : 16;
+                }
                 if ((INV_read_ok == 0) && (INV_write_ok == 1))
                 {
                     DIO_ComposeMessageRtu(0x02, 0x03, SW_add_hi, SW_add_lw, 0x00, Reg_Read_Count, 0x00);
@@ -1024,7 +1181,13 @@ void Invter_ModCom(void)
                     }// if ACS family Inv for setpoint
                     else
                         Inv_Sp = (((unsigned int)(WF_Drive_Setpoint) * 500) / 4095);// else Inv setpoint scaling
-                    if (INV_Error_Flag == 1)
+                    /* msk 19-Jun-2026: ACS EFB comm fault — 0x04FF reset CW, not full trip */
+                    if (InvIsAcsFamily(Inv) && acs_efb_reset_pending) {
+                        Mod_Data[0] = 0x04;
+                        Mod_Data[1] = 0xFF;
+                        acs_efb_reset_pending = 0;
+                    }
+                    else if (INV_Error_Flag == 1)
                     {
                         switch (Inv)
                         {
@@ -1116,6 +1279,20 @@ void Invter_ModCom(void)
                     {
                         if(DIO_ModBusMessage[1]==0x03)
                         {
+                            unsigned char acs_fault_read_only = 0;
+
+                            /* msk 19-Jun-2026: ACS step-0 — store fault word 0x0059, chain status read */
+                            if (InvIsAcsFamily(Inv) && acs_inv_read_step == 0) {
+                                acs_inv_fault_word = (uint16_t)(((uint16_t)DIO_ModBusMessage[3] << 8)
+                                                              | DIO_ModBusMessage[4]);
+                                acs_inv_fault_reg_valid = 1;
+                                acs_inv_read_step = 1;
+                                Invter_Status = 1;
+                                INV_read_ok = 0;
+                                INV_write_ok = 1;
+                                acs_fault_read_only = 1;
+                            }
+                            if (!acs_fault_read_only) {
                             INV_modarray_rd[1]= DIO_ModBusMessage[3];                    //Higher Byte of status word 4850: 8 to 15 bits
                             INV_modarray_rd[0]= DIO_ModBusMessage[4];                    //Lower Byte of status word  4850: 0 to 7 bits
                             if((Inv==1) &&(Read_count_AtvReg==0))                            //ATV32
@@ -1169,34 +1346,61 @@ void Invter_ModCom(void)
                                 INV_modarray_rd[4]= DIO_ModBusMessage[26];        //Lower Byte of 0x002B: Digital ips from 1 to 5
                             }// if Inv==4 || Inv==5 Yaskawa
 
-                            if(INV_modarray_rd[0] == fault_code )    //if fault
                             {
-                                INV_Error_Flag = 1;
-                                M042 = 1;
-                                M044 = 1;
-                                Err_Counter_Inv++;
-                                if((Err_Counter_Inv % 10) == 1)
-                                {
-                                    Err_Gen = Err_Gen + 1;
-                                    Invter_Status = 1;
-                                    DIO_DIRN_MAX487(1);
-                                    DIO_ModBusIdx = -1;
-                                    //if((DIO_Module == 1)||(DIO_Module == 2))
-                                    //Dev_ID = 1;
-                                    if((DIO_Module == 1)||(DIO_Module == 2) || ((Inv_1==1)||(Inv_1==2)||(Inv_1==3)||(Inv_1==4)||(Inv_1==5)||(Inv_1==6)||(Inv_1==7)||(Inv_1==8)))
-                                    {
-                                        Dev_ID = 3;
-                                        if(Err_Gen>INV_COMM_FAULT_ERR_GEN_MAX)
-                                        {
-                                            Err_Counter_Inv = 0;
-                                            InvComm_SetComError(14); /* msk29-may-26 */
-                                            Err_Gen = 0;
-                                        }// if Err_Gen > 50
-                                    }// if DIO_Module / prefeeder Inv path
-                                }// if Err_Counter_Inv % 10 == 1
-                            }// if INV_modarray_rd[0] == fault_code
-                            else
-                            {// not fault_code on status word
+                                unsigned char inv_decode_ok = 0;
+
+                                /* msk 19-Jun-2026: ACS 0x38 + EFB comm fault — reset, clear trip/error */
+                                if (InvIsAcsFamily(Inv)) {
+                                    unsigned char fault_reg_valid = acs_inv_fault_reg_valid;
+
+                                    acs_inv_read_step = 0;
+                                    acs_inv_fault_reg_valid = 0;
+                                    if (INV_modarray_rd[0] == fault_code) {
+                                        if (fault_reg_valid
+                                            && AcsFaultCodeIsEfbCommOnly(acs_inv_fault_word)) {
+                                            AcsInv1ApplyEfbCommSuppress();
+                                            inv_decode_ok = 1;
+                                        } else if (fault_reg_valid) {
+                                            AcsInv1ApplyRealFaultTrip();
+                                        } else {
+                                            /* 0x38 before fault reg read — comm gap, no trip */
+                                            AcsInv1ApplyEfbCommSuppress();
+                                            inv_decode_ok = 1;
+                                        }
+                                    } else {
+                                        INV_Error_Flag = 0;
+                                        /* clear Modbus-only M042 sticky; keep trip if M019 DIO fault */
+                                        if ((M042 == 1) && (M019 == 1))
+                                            AcsInv1ClearWfDriveFaultMarkers();
+                                        inv_decode_ok = 1;
+                                    }
+                                } else if (INV_modarray_rd[0] == fault_code) {
+                                    VfdFault_LatchRegCode(0); /* msk 19-Jun-2026: status word only, no ACS fault reg */
+                                    INV_Error_Flag = 1;
+                                    M042 = 1;
+                                    M044 = 1;
+                                    Err_Counter_Inv++;
+                                    if ((Err_Counter_Inv % 10) == 1) {
+                                        Err_Gen = Err_Gen + 1;
+                                        Invter_Status = 1;
+                                        DIO_DIRN_MAX487(1);
+                                        DIO_ModBusIdx = -1;
+                                        if ((DIO_Module == 1) || (DIO_Module == 2) ||
+                                            ((Inv_1 == 1) || (Inv_1 == 2) || (Inv_1 == 3) || (Inv_1 == 4) ||
+                                             (Inv_1 == 5) || (Inv_1 == 6) || (Inv_1 == 7) || (Inv_1 == 8))) {
+                                            Dev_ID = 3;
+                                            if (Err_Gen > INV_COMM_FAULT_ERR_GEN_MAX) {
+                                                Err_Counter_Inv = 0;
+                                                InvComm_SetComError(14); /* msk29-may-26 */
+                                                Err_Gen = 0;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    INV_Error_Flag = 0;
+                                    inv_decode_ok = 1;
+                                }
+                                if (inv_decode_ok) {
                                 switch (Inv)
                                 {
                                 case 1:  /* ATv31 Altivar */
@@ -1268,13 +1472,14 @@ void Invter_ModCom(void)
                                 default:
                                     break;
                                 }// switch (Inv) decode process data fc 0x03
-                                INV_Error_Flag = 0;
-                            }// else not fault_code
+                                }
+                            }
                             INV_read_ok = 1;
                             INV_write_ok = 0;
                             Read_count_AtvReg = Read_count_AtvReg + 1;
                             if (Read_count_AtvReg > 1)
                                 Read_count_AtvReg = 0;
+                            }// if !acs_fault_read_only
                         }// if DIO_ModBusMessage[1] == 0x03 read response handler
                         if (DIO_ModBusMessage[1] == 0x10)
                         {
@@ -1495,6 +1700,12 @@ void Invter2_ModCom(void)
                     default: break;
                     }// switch (Inv_1) M066==0 branch
                 }// if M066==0 INV2 case1
+                /* msk 19-Jun-2026: ACS FC03 step 0=fault 0x0059, step 1=status 0x0003 x6 (INV2) */
+                if (InvIsAcsFamily(Inv_1)) {
+                    AcsConfigureFc03ReadStep(acs_inv2_read_step,
+                                             &SW_add_hi, &SW_add_lw, &Reg_Read_Count);
+                    Rx_byte_count = (acs_inv2_read_step == 0) ? 6 : 16;
+                }
                 if ((INV2_read_ok == 0) && (INV2_write_ok == 1))
                 {
                     DIO_ComposeMessageRtu(0x03, 0x03, SW_add_hi, SW_add_lw, 0x00, Reg_Read_Count, 0x00);
@@ -1521,7 +1732,13 @@ void Invter2_ModCom(void)
                         else
                             Inv_Sp = (((unsigned int)(WF_Drive_Setpoint) * 500) / 4095);// else WF setpoint norm
                     }// if Prefeeder==0
-                    if (INV2_Error_Flag == 1)
+                    /* msk 19-Jun-2026: ACS EFB comm fault — 0x04FF reset CW on INV2 */
+                    if (InvIsAcsFamily(Inv_1) && acs_efb_reset_inv2_pending) {
+                        Mod_Data[0] = 0x04;
+                        Mod_Data[1] = 0xFF;
+                        acs_efb_reset_inv2_pending = 0;
+                    }
+                    else if (INV2_Error_Flag == 1)
                     {
                         switch (Inv_1)
                         {
@@ -1586,6 +1803,20 @@ void Invter2_ModCom(void)
                     {
                         if (DIO_ModBusMessage[1] == 0x03)
                         {
+                            unsigned char acs2_fault_read_only = 0;
+
+                            /* msk 19-Jun-2026: ACS INV2 step-0 — fault reg 0x0059, chain status read */
+                            if (InvIsAcsFamily(Inv_1) && acs_inv2_read_step == 0) {
+                                acs_inv2_fault_word = (uint16_t)(((uint16_t)DIO_ModBusMessage[3] << 8)
+                                                               | DIO_ModBusMessage[4]);
+                                acs_inv2_fault_reg_valid = 1;
+                                acs_inv2_read_step = 1;
+                                Invter2_Status = 1;
+                                INV2_read_ok = 0;
+                                INV2_write_ok = 1;
+                                acs2_fault_read_only = 1;
+                            }
+                            if (!acs2_fault_read_only) {
                             INV_modarray_rd[1] = DIO_ModBusMessage[3];
                             INV_modarray_rd[0] = DIO_ModBusMessage[4];
                             if ((Inv_1 == 1) && (Read_count_AtvReg_1 == 0))
@@ -1635,30 +1866,53 @@ void Invter2_ModCom(void)
                                 INV_modarray_rd[5] = DIO_ModBusMessage[25];
                                 INV_modarray_rd[4] = DIO_ModBusMessage[26];
                             }// Inv_1 Yaskawa J1000/J7 fc03 unpack
-                            if (INV_modarray_rd[0] == fault_code)
                             {
-                                INV2_Error_Flag = 1;
-                                Err_Counter_Inv2++;
-                                if ((Err_Counter_Inv2 % 10) == 1)
-                                {
-                                    Err_Gen2 = Err_Gen2 + 1;
-                                    Invter2_Status = 1;
-                                    DIO_DIRN_MAX487(1);
-                                    DIO_ModBusIdx = -1;
-                                    if ((DIO_Module == 1) || (DIO_Module == 2) ||
-                                        ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
-                                         (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
-                                        Dev_ID = 1;
-                                    if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX)
-                                    {
-                                        Err_Counter_Inv2 = 0;
-                                        InvComm_SetComError(15);
-                                        Err_Gen2 = 0;
-                                    }// Err_Gen2>50 INV2 fault path
-                                }// Err_Counter_Inv2 % 10==1 INV2 fault
-                            }// if INV_modarray_rd[0]==fault_code INV2
-                            else
-                            {
+                                unsigned char inv2_decode_ok = 0;
+
+                                /* msk 19-Jun-2026: ACS INV2 0x38 + EFB comm — reset, no trip */
+                                if (InvIsAcsFamily(Inv_1)) {
+                                    unsigned char fault2_reg_valid = acs_inv2_fault_reg_valid;
+
+                                    acs_inv2_read_step = 0;
+                                    acs_inv2_fault_reg_valid = 0;
+                                    if (INV_modarray_rd[0] == fault_code) {
+                                        if (fault2_reg_valid
+                                            && AcsFaultCodeIsEfbCommOnly(acs_inv2_fault_word)) {
+                                            AcsInv2ApplyEfbCommSuppress();
+                                            inv2_decode_ok = 1;
+                                        } else if (fault2_reg_valid) {
+                                            AcsInv2ApplyRealFaultTrip();
+                                        } else {
+                                            AcsInv2ApplyEfbCommSuppress();
+                                            inv2_decode_ok = 1;
+                                        }
+                                    } else {
+                                        INV2_Error_Flag = 0;
+                                        inv2_decode_ok = 1;
+                                    }
+                                } else if (INV_modarray_rd[0] == fault_code) {
+                                    INV2_Error_Flag = 1;
+                                    Err_Counter_Inv2++;
+                                    if ((Err_Counter_Inv2 % 10) == 1) {
+                                        Err_Gen2 = Err_Gen2 + 1;
+                                        Invter2_Status = 1;
+                                        DIO_DIRN_MAX487(1);
+                                        DIO_ModBusIdx = -1;
+                                        if ((DIO_Module == 1) || (DIO_Module == 2) ||
+                                            ((Inv == 1) || (Inv == 2) || (Inv == 3) || (Inv == 4) ||
+                                             (Inv == 5) || (Inv == 6) || (Inv == 7) || (Inv == 8)))
+                                            Dev_ID = 1;
+                                        if (Err_Gen2 > INV_COMM_FAULT_ERR_GEN_MAX) {
+                                            Err_Counter_Inv2 = 0;
+                                            InvComm_SetComError(15);
+                                            Err_Gen2 = 0;
+                                        }
+                                    }
+                                } else {
+                                    INV2_Error_Flag = 0;
+                                    inv2_decode_ok = 1;
+                                }
+                                if (inv2_decode_ok) {
                                 switch (Inv_1)
                                 {
                                 case 1:  /* ATv31 Altivar */
@@ -1722,14 +1976,15 @@ void Invter2_ModCom(void)
                                     break;
                                 default: break;
                                 }// switch (Inv_1) decode fc03 INV2 OK path
-                                INV2_Error_Flag = 0;
-                            }// else not fault INV2 fc03 decode
+                                }
+                            }
                             INV2_read_ok = 1;
                             INV2_write_ok = 0;
                             Read_count_AtvReg_1 = Read_count_AtvReg_1 + 1;
                             if (Read_count_AtvReg_1 > 1)
                                 Read_count_AtvReg_1 = 0;
-                        }// if fc==0x03 inside CRC-ok INV2
+                            }// if !acs2_fault_read_only
+                        }// if DIO_ModBusMessage[1] == 0x03 read response handler INV2
                         if (DIO_ModBusMessage[1] == 0x10)
                         {
                             INV_modarray_wr[0] = DIO_ModBusMessage[5];

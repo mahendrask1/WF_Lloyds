@@ -465,6 +465,28 @@ bool UpdateTripStatus()
         Zero_Tacho_Feed_Buffer_Flag = 2;
         flag = true;
     }
+    /* msk 19-Jun-2026: AIO module comm loss — stop feeder, Error 17 AO Comm Fail */
+    if (((Start_Stop_status == START) || (GetFieldMode() && (M066 == 1)))
+        && (AO_Comm_Fault == 1) && ((AO_Type == 0) || (AO_Type == 1)))
+    {
+        M066 = 0;
+        Start_Stop_status = STOP;
+        M044 = 1;
+        Error_No = 17;
+        Zero_Tacho_Feed_Buffer_Flag = 2;
+        flag = true;
+    }
+    /* msk 19-Jun-2026: Inv1 Modbus timeout/CRC — stop WF; distinct from ACS 6681 EFB fault */
+    if (((Start_Stop_status == START) || (GetFieldMode() && (M066 == 1)))
+        && (Inv1_Comm_Fault == 1) && (Inv != 0))
+    {
+        M066 = 0;
+        Start_Stop_status = STOP;
+        M044 = 1;
+        Error_No = 14;
+        Zero_Tacho_Feed_Buffer_Flag = 2;
+        flag = true;
+    }
     if (M018 == 1) // Fault ack_i/p — only when emg input healthy
     {
         if (M010 == 1)
@@ -553,6 +575,24 @@ bool UpdateErrorStatus()
     if (M041 == 1)    //msk keep belt track error latched 17-may-2026
     {
         Error_No = 4;
+        M044 = 1;
+        flag = true;
+    }
+    if (AO_Comm_Fault == 1 && ((AO_Type == 0) || (AO_Type == 1))) /* msk 19-Jun-2026: AO comm fail latched */
+    {
+        Error_No = 17;
+        M044 = 1;
+        flag = true;
+    }
+    if (Inv1_Comm_Fault == 1 && (Inv != 0)) /* msk 19-Jun-2026: Inv1 com fail latched */
+    {
+        Error_No = 14;
+        M044 = 1;
+        flag = true;
+    }
+    if (Inv2_Comm_Fault == 1 && (Inv_1 != 0))
+    {
+        Error_No = 15;
         M044 = 1;
         flag = true;
     }

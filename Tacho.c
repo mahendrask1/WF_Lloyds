@@ -25,6 +25,7 @@
 #include "io_control.h"
 #include "modbus.h"
 #include "keys.h"
+#include "Errors.h"
 
 unsigned int Tacho_Counter, Inv_Op_Freq, Inv1_Op_Freq;
 unsigned char Inv_Op_current, Inv1_Op_current;
@@ -209,6 +210,12 @@ void PF_Drive_Setpoint_Cal()
 //-------------------------------------------------
 void Update_External_Setpoint(void)
 {
+    /* msk 19-Jun-2026: AIO module comm fault — force zero setpoint, not last AI read */
+    if (AO_Comm_Fault == 1 && ((AO_Type == 0) || (AO_Type == 1))) {
+        AiBuffers_ClearAll();
+        External_Setpoint = 0;
+        return;
+    }
     if (AI_avg > AI_calb_val[0])
     {
         External_Setpoint = ((unsigned int)((float)(AI_avg - AI_calb_val[0]) * Capacity)
