@@ -159,6 +159,7 @@ static void Acs380560580_UnpackFc03(void)
 #define ACS_MODBUS_FAULT_REG_LO    0x59U   /* holding 400090 */
 #define ACS_EFB_COMM_FAULT_6681    6681U   /* ACS580 EFB comm loss fault */
 #define ACS_EFB_COMM_WARN_A7CE     0xA7CEU /* ACS580 EFB comm loss warning */
+#define ACS_EFB_COMM_STREAK_LATCH  20U     /* msk 19-Jun-2026: consecutive 6681/A7CE before Err20/21 */
 
 static unsigned char acs_inv_read_step;
 static unsigned char acs_inv2_read_step;
@@ -168,6 +169,11 @@ static uint16_t acs_inv_fault_word;
 static uint16_t acs_inv2_fault_word;
 static unsigned char acs_efb_reset_pending;
 static unsigned char acs_efb_reset_inv2_pending;
+static unsigned char acs_inv1_efb_streak;
+static unsigned char acs_inv2_efb_streak;
+
+unsigned char acs_inv1_efb_latched;
+unsigned char acs_inv2_efb_latched;
 
 static void InvComm_SetComError(unsigned char inv_num); /* msk 19-Jun-2026: fwd decl — ACS trip helpers call before def */
 
@@ -232,6 +238,31 @@ static void AcsInv2ApplyEfbCommSuppress(void)
 {
     acs_efb_reset_inv2_pending = 1;
     INV2_Error_Flag = 0;
+}
+
+/* msk 19-Jun-2026: valid fault reg 6681/A7CE — count toward sticky Err20 (no trip) */
+static void AcsInv1EfbCommStreakHit(void)
+{
+    if (acs_inv1_efb_streak < ACS_EFB_COMM_STREAK_LATCH)
+        acs_inv1_efb_streak++;
+    if (acs_inv1_efb_streak >= ACS_EFB_COMM_STREAK_LATCH)
+        acs_inv1_efb_latched = 1;
+}
+
+static void AcsInv2EfbCommStreakHit(void)
+{
+    if (acs_inv2_efb_streak < ACS_EFB_COMM_STREAK_LATCH)
+        acs_inv2_efb_streak++;
+    if (acs_inv2_efb_streak >= ACS_EFB_COMM_STREAK_LATCH)
+        acs_inv2_efb_latched = 1;
+}
+
+void AcsEfbComm_ClearAll(void)
+{
+    acs_inv1_efb_streak = 0;
+    acs_inv1_efb_latched = 0;
+    acs_inv2_efb_streak = 0;
+    acs_inv2_efb_latched = 0;
 }
 
 static void AcsInv1ApplyRealFaultTrip(void)
@@ -1352,13 +1383,21 @@ void Invter_ModCom(void)
                                 /* msk 19-Jun-2026: ACS 0x38 + EFB comm fault — reset, clear trip/error */
                                 if (InvIsAcsFamily(Inv)) {
                                     unsigned char fault_reg_valid = acs_inv_fault_reg_valid;
+                                    uint16_t fault_word = acs_inv_fault_word;
 
                                     acs_inv_read_step = 0;
                                     acs_inv_fault_reg_valid = 0;
+                                    if (fault_reg_valid) {
+                                        if (AcsFaultCodeIsEfbCommOnly(fault_word)) {
+                                            AcsInv1ApplyEfbCommSuppress();
+                                            AcsInv1EfbCommStreakHit();
+                                        } else {
+                                            acs_inv1_efb_streak = 0;
+                                        }
+                                    }
                                     if (INV_modarray_rd[0] == fault_code) {
                                         if (fault_reg_valid
-                                            && AcsFaultCodeIsEfbCommOnly(acs_inv_fault_word)) {
-                                            AcsInv1ApplyEfbCommSuppress();
+                                            && AcsFaultCodeIsEfbCommOnly(fault_word)) {
                                             inv_decode_ok = 1;
                                         } else if (fault_reg_valid) {
                                             AcsInv1ApplyRealFaultTrip();
@@ -1872,13 +1911,21 @@ void Invter2_ModCom(void)
                                 /* msk 19-Jun-2026: ACS INV2 0x38 + EFB comm — reset, no trip */
                                 if (InvIsAcsFamily(Inv_1)) {
                                     unsigned char fault2_reg_valid = acs_inv2_fault_reg_valid;
+                                    uint16_t fault2_word = acs_inv2_fault_word;
 
                                     acs_inv2_read_step = 0;
                                     acs_inv2_fault_reg_valid = 0;
+                                    if (fault2_reg_valid) {
+                                        if (AcsFaultCodeIsEfbCommOnly(fault2_word)) {
+                                            AcsInv2ApplyEfbCommSuppress();
+                                            AcsInv2EfbCommStreakHit();
+                                        } else {
+                                            acs_inv2_efb_streak = 0;
+                                        }
+                                    }
                                     if (INV_modarray_rd[0] == fault_code) {
                                         if (fault2_reg_valid
-                                            && AcsFaultCodeIsEfbCommOnly(acs_inv2_fault_word)) {
-                                            AcsInv2ApplyEfbCommSuppress();
+                                            && AcsFaultCodeIsEfbCommOnly(fault2_word)) {
                                             inv2_decode_ok = 1;
                                         } else if (fault2_reg_valid) {
                                             AcsInv2ApplyRealFaultTrip();

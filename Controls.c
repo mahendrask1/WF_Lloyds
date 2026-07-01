@@ -374,6 +374,7 @@ void ApplyFaultResetMarkers(void)
     M020 = 1;
     M077 = 0;
     M046 = 0;
+    AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: Err20/21 streak + latch */
     ErrorLatch_ClearAll();
     ResetInvCommState();
 }
@@ -402,6 +403,7 @@ void VfdBootPostWarmupInit(void)
     M020 = 1;
     M077 = 0;
     M046 = 0;
+    AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: power-on wipe Err20/21 */
     ErrorLatch_ClearAll();
     ClearInvCommFaultFlags();
     VfdDiSanitizeStartMarkers();
@@ -596,6 +598,10 @@ bool UpdateErrorStatus()
         M044 = 1;
         flag = true;
     }
+    if (acs_inv1_efb_latched == 1) /* msk 19-Jun-2026: drive EFB comm — display only, no trip */
+        Error_No = ERR_ACS_EFB_COMM_INV1;
+    if (acs_inv2_efb_latched == 1)
+        Error_No = ERR_ACS_EFB_COMM_INV2;
     return flag;
 }
 //-------------------------------------------------------------------------------------

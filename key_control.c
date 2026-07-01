@@ -130,6 +130,7 @@ void key_action (void)
             M020 = 1 ; //PF Drive Fault  if M020 = 0
             M077 = 0 ; //ACAL Abort clear
             M046 = 0 ; //ZSS faulr Marker
+            AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: clear key — Err20/21 latch */
             ErrorLatch_ClearAll();
             break;
 

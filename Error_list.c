@@ -1,4 +1,4 @@
-﻿/*Error_list.c*/
+/*Error_list.c*/
 #include "lpc_types.h"
 #include "lpc17xx_rtc.h"
 #include "main_routine.h"
@@ -68,7 +68,7 @@ const char *ACAL_Display[4][16] = {
     {"ACAL Abort"},       /* if M072 == 1 */
 };
 
-const char *error_msg[21][20] = {
+const char *error_msg[26][20] = {
     {" "},                /* Err_no = 0 */
     {"DIO Com Error"},    /* Err_no = 1 */
     {"Modbus Com Error"}, /* Err_no = 2 */
@@ -77,7 +77,7 @@ const char *error_msg[21][20] = {
     {"Overload Alarm"},   /* Err_no = 5 */
     {"Underload Alarm"},  /* Err_no = 6 */
     {"Loadcell 1 Fault"}, /* Err_no = 7 */
-    {"Drive Fault(M019)"}, /* Err_no = 8 — panel/PLC M019/M020 DIO */
+    {"Drive Fault"},      /* Err_no = 8 — dynamic via Error_PrintLine6 */
     {"Emergency Fault"},  /* Err_no = 9 */
     {"Deviation Fault"},  /* Err_no = 10 */
     {"No PLC File"},      /* Err_no = 11 */
@@ -88,6 +88,13 @@ const char *error_msg[21][20] = {
     {"Loadcell 2 Fault"}, /* Err_no = 16 */
     {"AO Comm Fail"},     /* Err_no = 17 */
     {"VFD Err-STSWD "},   /* Err_no = 18 — fallback; dynamic via Error_PrintLine6 */
+    {"Error Code - 19"},  /* Err_no = 19 — reserved */
+    {"VFD EFB Com Int1"}, /* Err_no = 20 — msk 19-Jun-2026: ACS 6681/A7CE drive-reported */
+    {"VFD EFB Com Int2"}, /* Err_no = 21 — msk 19-Jun-2026: ACS INV2 EFB comm */
+    {"Error Code - 22"},  /* Err_no = 22 — reserved */
+    {"Error Code - 23"},  /* Err_no = 23 — reserved */
+    {"Error Code - 24"},  /* Err_no = 24 — reserved */
+    {"Error Code - 25"},  /* Err_no = 25 — reserved */
 };
 
 /* msk 19-Jun-2026: ACS580 fault reg 400090 → 6-char line6 tag for VFD Err-xxxxxx */
@@ -147,6 +154,19 @@ static void Error_BuildVfdFaultLine(void)
     sprintf(vfd_err_display_line, "VFD Err-%s", tag);
 }
 
+/* msk 19-Jun-2026: Error 8 — show marker source in (brackets), not always (M019) */
+static void Error_BuildDriveFaultLine8(void)
+{
+    if (M019 == 0)
+        sprintf(vfd_err_display_line, "Drive Fault(M019)");
+    else if (M045 == 1)
+        sprintf(vfd_err_display_line, "Drive Fault(M020)");
+    else if (M042 == 1)
+        sprintf(vfd_err_display_line, "Drive Fault(M042)");
+    else
+        sprintf(vfd_err_display_line, "Drive Fault");
+}
+
 void Error_PrintLine6(unsigned char err_no, char start_row, char start_col,
                       char font_size, char underline_no)
 {
@@ -158,14 +178,20 @@ void Error_PrintLine6(unsigned char err_no, char start_row, char start_col,
         Print_String2(&dyn_ptr, start_row, start_col, font_size, underline_no);
         return;
     }
+    if (err_no == (unsigned char)ERR_DRIVE_M019) {
+        Error_BuildDriveFaultLine8();
+        dyn_ptr = vfd_err_display_line;
+        Print_String2(&dyn_ptr, start_row, start_col, font_size, underline_no);
+        return;
+    }
     Print_String2(error_msg[err_no], start_row, start_col, font_size, underline_no);
 }
 
 #define ERROR_MIN_CODE 1
-#define ERROR_MAX_CODE 18
+#define ERROR_MAX_CODE 25
 #define ERROR_ROTATE_SCANS 400U /* 2s at 200 scans/sec */
 
-static unsigned char error_latch[21];
+static unsigned char error_latch[26];
 static unsigned char error_display_index = 0;
 static uint16_t error_rotate_elapsed_scans = 0;
 static uint16_t error_rotate_last_scan = 0;
@@ -224,8 +250,15 @@ static void ErrorLatch_Collect(void)
         ErrorLatch_Add(ERR_DRIVE_M019);
     if (M045 == 1)
         ErrorLatch_Add(ERR_DRIVE_M019);
+    if ((M042 == 1) && (INV_Error_Flag == 0) && (M019 == 1))
+        ErrorLatch_Add(ERR_DRIVE_M019);
     if (INV_Error_Flag == 1)
         ErrorLatch_Add(ERR_DRIVE_STSWD);
+    /* msk 19-Jun-2026: ACS EFB comm sticky — cleared only M018 / power-on */
+    if (acs_inv1_efb_latched == 1)
+        ErrorLatch_Add(ERR_ACS_EFB_COMM_INV1);
+    if (acs_inv2_efb_latched == 1)
+        ErrorLatch_Add(ERR_ACS_EFB_COMM_INV2);
     if (M010 == 0)
         ErrorLatch_Add(9);
     else if (M044 == 0)
