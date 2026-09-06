@@ -113,25 +113,8 @@ void key_action (void)
                 return;
             }
 
-            Error_No = 0 ;
-            M056 = 0 ;//Limit1
-            M057 = 0 ;//Limit2
-            M058 = 0 ;//Overload Alarm
-            M059 = 0 ;//Underload Alarm
-            M060 = 0 ;//Loadcell Fault
-            M040 = 0 ;//Tacho Fault
-            M041 = 0 ; //Belt Tracking
-            M042 = 0 ; //Reset WF Drive Fault
-            M043 = 0 ; //Deviation Fault
-            M044 = 0 ; //General Fault
-            M045 = 0;  //PF Drive Fault Marker
-            M010 = 1 ; //Emergency Fault if M010 = 0
-            M019 = 1 ; //WF Drive Fault  if M019 = 0
-            M020 = 1 ; //PF Drive Fault  if M020 = 0
-            M077 = 0 ; //ACAL Abort clear
-            M046 = 0 ; //ZSS faulr Marker
-            AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: clear key — Err20/21 latch */
-            ErrorLatch_ClearAll();
+            /* msk 19-Jun-2026: same as M018 — inv comm reset + ACS 0x04FF queue */
+            ApplyFaultResetMarkers();
             break;
 
         

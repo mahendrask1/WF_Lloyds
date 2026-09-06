@@ -23,6 +23,7 @@
 #include "spi.h"
 #include "plc.h"
 #include "io_control.h"
+#include "debug_ao_trace.h"
 #include "modbus.h"
 #include "keys.h"
 #include "Errors.h"
@@ -208,12 +209,25 @@ void PF_Drive_Setpoint_Cal()
 //-------------------------------------------------
 
 //-------------------------------------------------
+extern unsigned char Operating_Mode;
+extern char Start_Stop_status;
+
 void Update_External_Setpoint(void)
 {
     /* msk 19-Jun-2026: AIO module comm fault — force zero setpoint, not last AI read */
+    // #region agent log
+    dbg_ao_trace_snap(DBG_AO_SITE_UPD_EXT_IN, (uint16_t)External_Setpoint,
+                      (uint16_t)Current_Setpoint, M008, M002, Operating_Mode,
+                      (uint8_t)Start_Stop_status, M044, AO_Comm_Fault);
+    // #endregion
     if (AO_Comm_Fault == 1 && ((AO_Type == 0) || (AO_Type == 1))) {
         AiBuffers_ClearAll();
-        External_Setpoint = 0;
+        AioCommFaultApplySetpointClear(); /* msk 19-Jun-2026: Ext+Current only if interlock analog */
+        // #region agent log
+        dbg_ao_trace_snap(DBG_AO_SITE_UPD_EXT_OUT, (uint16_t)External_Setpoint,
+                          (uint16_t)Current_Setpoint, M008, M002, Operating_Mode,
+                          (uint8_t)Start_Stop_status, M044, AO_Comm_Fault);
+        // #endregion
         return;
     }
     if (AI_avg > AI_calb_val[0])

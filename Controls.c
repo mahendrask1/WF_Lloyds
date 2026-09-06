@@ -10,6 +10,7 @@
 #include "parameters.h"
 #include "Errors.h"
 #include "functions.h"
+#include "debug_ao_trace.h"
 void After_AutoCAL(void);
 extern uint8_t ram_values[RAM_SIZE];
 extern uint16_t New_menu_parameters[105];
@@ -353,7 +354,33 @@ bool GetFieldMode()
     }
 }
 //-----------------------------------------------------
-/* Same marker/error clear as M018 fault ack (also used after boot VFD warmup). */
+/* msk 19-Jun-2026: remote interlock DIO (M002=0) — Current_Setpoint from AIO external analog */
+int CurrentSetpointFromExternalAi(void)
+{
+    if (M008 != 1)
+        return 0;
+    if (M002 != 0)
+        return 0;
+    if ((Operating_Mode != Int_Gra_Dio) && (Operating_Mode != Int_Vol_Dio))
+        return 0;
+    return 1;
+}
+
+/* msk 19-Jun-2026: AIO comm fault — clear setpoints only when analog drives Current SP */
+void AioCommFaultApplySetpointClear(void)
+{
+    if (AO_Comm_Fault != 1)
+        return;
+    if ((AO_Type != 0) && (AO_Type != 1))
+        return;
+    if (!CurrentSetpointFromExternalAi())
+        return;
+    External_Setpoint = 0;
+    Current_Setpoint = 0;
+}
+
+//-----------------------------------------------------
+/* msk 19-Jun-2026: M018 / clear key / boot — WF markers, inv comm, ACS fault-reset queue */
 void ApplyFaultResetMarkers(void)
 {
     Error_No = 0;
@@ -374,12 +401,14 @@ void ApplyFaultResetMarkers(void)
     M020 = 1;
     M077 = 0;
     M046 = 0;
+    VfdFault_ClearRegCode(); /* msk 19-Jun-2026: drop stale Err18 STSWD tag after ack */
     AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: Err20/21 streak + latch */
     ErrorLatch_ClearAll();
     ResetInvCommState();
+    AcsFaultResetQueueAll(); /* msk 19-Jun-2026: send 0x04FF on next ACS write */
 }
 
-/* After warmup + VfdBootSendFaultResetBeforeSuperloop: clear WF fault sources. */
+/* msk 19-Jun-2026: after boot warmup — clear WF fault sources; queue ACS reset retry */
 void VfdBootPostWarmupInit(void)
 {
     if (Inv == 0)
@@ -406,6 +435,8 @@ void VfdBootPostWarmupInit(void)
     AcsEfbComm_ClearAll(); /* msk 19-Jun-2026: power-on wipe Err20/21 */
     ErrorLatch_ClearAll();
     ClearInvCommFaultFlags();
+    VfdFault_ClearRegCode(); /* msk 19-Jun-2026: no orphan STSWD tag at superloop entry */
+    AcsFaultResetQueueAll(); /* msk 19-Jun-2026: retry 0x04FF if VFD LOCAL held 6681 */
     VfdDiSanitizeStartMarkers();
 }
 
@@ -444,8 +475,9 @@ bool UpdateTripStatus()
         Zero_Tacho_Feed_Buffer_Flag = 2;
         flag = true;
     }
-    if (((Start_Stop_status == START) || (GetFieldMode() && (M066 == 1)) || (M008 == 0)) 
-        && WfDriveOrVfdFaultActive()) 
+    /* msk 19-Jun-2026: local stopped — no drive-fault re-trip; running/field still covered above */
+    if (((Start_Stop_status == START) || (GetFieldMode() && (M066 == 1)))
+        && WfDriveOrVfdFaultActive())
     { // DIO healthy, VFD Modbus fault, or ATV status fault
         M066 = 0; // STOP
         Start_Stop_status = STOP;
@@ -475,7 +507,13 @@ bool UpdateTripStatus()
         Start_Stop_status = STOP;
         M044 = 1;
         Error_No = 17;
+        AioCommFaultApplySetpointClear(); /* msk 19-Jun-2026: zero SP only if interlock analog */
         Zero_Tacho_Feed_Buffer_Flag = 2;
+        // #region agent log
+        dbg_ao_trace_snap(DBG_AO_SITE_TRIP, (uint16_t)External_Setpoint,
+                          (uint16_t)Current_Setpoint, M008, M002, Operating_Mode,
+                          (uint8_t)Start_Stop_status, M044, AO_Comm_Fault);
+        // #endregion
         flag = true;
     }
     /* msk 19-Jun-2026: Inv1 Modbus timeout/CRC — stop WF; distinct from ACS 6681 EFB fault */
@@ -541,13 +579,13 @@ bool UpdateErrorStatus()
         flag = true;
     }
 
-    if (WfDriveOrVfdFaultActive()) 
-     //msk DIO + VFD Modbus/status fault (field/local) 17-may-2026
+    /* msk 19-Jun-2026: trip only when running or DIO fault — not INV-only when local stopped */
+    if (WfDriveOrVfdFaultActive()
+        && ((Start_Stop_status == START) || (M066 == 1) || (M019 == 0)
+            || ((Inv == 1) && (I027 == 1))))
     {
         ApplyWfDriveFaultTrip();
         flag = true;
-        flag = true;
-
     }
 
     if ((M020 == 0)) 
@@ -598,9 +636,9 @@ bool UpdateErrorStatus()
         M044 = 1;
         flag = true;
     }
-    if (acs_inv1_efb_latched == 1) /* msk 19-Jun-2026: drive EFB comm — display only, no trip */
+    if (acs_inv1_efb_latched == 1) /* msk 03-Jul-2026: Err20 while 6681; clears when drive healthy */
         Error_No = ERR_ACS_EFB_COMM_INV1;
-    if (acs_inv2_efb_latched == 1)
+    if (acs_inv2_efb_latched == 1) /* msk 03-Jul-2026: Err21 while 6681; clears when drive healthy */
         Error_No = ERR_ACS_EFB_COMM_INV2;
     return flag;
 }
@@ -676,7 +714,6 @@ void Ext_WF_Controls()
             //Interlocked mode volometric or gravimetric will
             //follow external setpoint
         }// if((Operating_Mode == Int_gra_Dio)||(Operating_Mode == Int_vol_Dio))
-
         if(GetDeIntGraMode() == true)
         {
             Current_Setpoint = Internal_Setpoint;
@@ -726,8 +763,9 @@ void Ext_WF_Controls()
                 Zero_Tacho_Feed_Buffer_Flag = 2;
                 Error_No = 9;
             }
-            else if (WfDriveOrVfdFaultActive())
-            {
+            else if (WfDriveOrVfdFaultActive()
+                     && ((M066 == 1) || (M019 == 0) || ((Inv == 1) && (I027 == 1))))
+            { /* msk 19-Jun-2026: local stopped — block INV_Error_Flag-only re-trip after clear */
                 ApplyWfDriveFaultTrip();
                 if (M020 == 0)
                     M045 = 1;
@@ -814,6 +852,11 @@ void Ext_WF_Controls()
         else
             BIN_PF_Start_Status = 0;
     }//if (Pre_Hopper == 1) ends
+    // #region agent log
+    dbg_ao_trace_snap(DBG_AO_SITE_EXT_WF_OUT, (uint16_t)External_Setpoint,
+                      (uint16_t)Current_Setpoint, M008, M002, Operating_Mode,
+                      (uint8_t)Start_Stop_status, M044, AO_Comm_Fault);
+    // #endregion
 }//End of Ext_WF_Controls()
 
 //-------------------------------------------------------------------------------------
@@ -824,8 +867,10 @@ void ControlActions()
     CurTripStatus = UpdateTripStatus();
     CurErrorStatus = UpdateErrorStatus();
     Ext_WF_Controls();
-    /* Last: VFD fault must win over field start held (M011) / remote run */
-    if (WfDriveOrVfdFaultActive())
+    /* msk 19-Jun-2026: VFD fault wins over field start — not INV-only when local stopped */
+    if (WfDriveOrVfdFaultActive()
+        && ((Start_Stop_status == START) || (M066 == 1) || (M019 == 0)
+            || ((Inv == 1) && (I027 == 1))))
         ApplyWfDriveFaultTrip();
 }
 //-------------------------------------------------------------------------------------

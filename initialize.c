@@ -174,7 +174,7 @@ extern uint16_t Rx_Err_Counter;
 extern char OLED_RAM[128][64];
 uint16_t  temp_val_;
 const char *IT_LOGO  = "AAG Ultron+";
-const char *IT_LOGO1 = "WFMOD 1.8c";
+const char *IT_LOGO1 = "WFMOD 5.0"; /* msk 03-Jul-2026: EFBCOM Err20 follows drive recovery */
 unsigned char Parameter_checkbit[8];
 extern unsigned char Dev_ID;
 extern const main_menu_struct Main_menu1[Main_Menu_Max];

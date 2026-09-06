@@ -49,7 +49,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>WF_MOD_18b</OutputName>
+          <OutputName>WF_MOD_18f</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -557,6 +557,11 @@
               <FileName>Tacho.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Tacho.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug_ao_trace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\debug_ao_trace.c</FilePath>
             </File>
             <File>
               <FileName>Zeroing_Process.c</FileName>

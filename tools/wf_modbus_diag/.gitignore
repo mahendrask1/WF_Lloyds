@@ -1,0 +1,6 @@
+# PyInstaller / Inno Setup build outputs (run Build_Installer.bat locally)
+build/
+dist/
+installer/output/
+Send_To_Customer/WF_Modbus_Diag/
+*.spec.bak

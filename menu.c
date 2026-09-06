@@ -191,8 +191,8 @@ sub_menu_struct sub_menu1[12][26] =
         {'F',255,255}
     },
     {    //3 Communication
-        {'O',9,70},         //O2    Inverter
-        {'O',9,71},         //O2    Inverter
+        {'O',9,70},         //O9 Inv1 — msk 06-Sep-2026: idx9 Other ACSxxx ACTIVE (EEPROM 8); scroll 8→9→OFF
+        {'O',9,71},         //O9 Inv2 — msk 06-Sep-2026: idx9 Other ACSxxx ACTIVE (EEPROM 8); mirror Inv1
         {'O',4,29},         //O3    SIO (PLC)_Interface
         {'O',3,30},         //O5    SIO Baud
         {'O',3,31},         //O3    SIO Setup Parity
@@ -389,8 +389,12 @@ char const sub_menu_options1[13][26][12][20]=
             },
 
             {      // 3 Communication
-                    {{"Inv1\0"},{"OFF\0"},{"ATV312\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380\0"},{"ACS560\0"},{"ACS580\0"}},
-                    {{"Inv2\0"},{"OFF\0"},{"ATV312-\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380\0"},{"ACS560\0"},{"ACS580\0"}},
+                    /* msk 06-Sep-2026: Inv1 O9 ACTIVATED — idx7 ACS380/560 (EEPROM 6), idx8 ACS580/850 (7),
+                     * idx9 Other ACSxxx (EEPROM 8). HOR: 8→9→OFF. Stored 6/7/8 = modern ACS (Inverter.c).
+                     * Future drive with new Modbus: rename idx9 label; extend Inverter.c Inv/Inv_1==8 path. */
+                    {{"Inv1\0"},{"OFF\0"},{"ATV312\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380/560\0"},{"ACS580/850\0"},{"Other ACSxxx\0"}}, /* msk 06-Sep-2026: idx9 active */
+                    /* msk 06-Sep-2026: Inv2 O9 ACTIVATED — mirror Inv1 idx7/8/9 (EEPROM par 71). */
+                    {{"Inv2\0"},{"OFF\0"},{"ATV312-\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380/560\0"},{"ACS580/850\0"},{"Other ACSxxx\0"}}, /* msk 06-Sep-2026: idx9 active */
 //                    {{"DIO Module\0"},{"OFF\0"},{"4Ip/4Op\0"},{"8Ip/8Op\0"}},
                     {{"SIO Interface\0"},{"Off\0"},{"Modbus-RTU\0"},{"Modbus-TCP\0"},{"Profibus-DP\0"}},
                     {{"SIO Baud rate\0"},{"19200\0"},{"38400\0"},{"57600\0"}},
@@ -1406,6 +1410,30 @@ void display_main_menu_routine(const main_menu_struct Main_menu[Main_Menu_Max], 
 }
 //-------------------------------------------------------
 
+/* msk 06-Sep-2026: Inv1/Inv2 O9 ACTIVATED — idx9 Other ACSxxx ↔ EEPROM 8; idx7/8 ↔ EEPROM 6/7.
+ * HOR scroll includes idx9 (8→9→OFF). Stored 6/7/8 → modern ACS in Inverter.c (InvIsAcsFamily). */
+#define INV_MENU_EEPROM_OTHER_ACS   8U   /* msk 06-Sep-2026: menu idx9 Other ACSxxx stored value */
+
+static unsigned char InvMenu_IsInvDrivePar(unsigned char var_offset)
+{
+    return (var_offset == 70U || var_offset == 71U);
+}
+
+static unsigned char InvMenu_ParValForDisplay(unsigned char var_offset, unsigned char stored)
+{
+    unsigned char par_val;
+
+    if (!InvMenu_IsInvDrivePar(var_offset))
+        return (unsigned char)(1U + stored);
+
+    /* msk 06-Sep-2026: EEPROM 0..8 → idx1..9; corrupt stored>8 shows OFF */
+    if (stored > INV_MENU_EEPROM_OTHER_ACS)
+        return 1U;
+
+    par_val = (unsigned char)(1U + stored);
+    return par_val;
+}
+
 //-------------------------------------------------------
 void Sub_Menu_Routine(main_menu_struct Main_menu[Main_Menu_Max], char Sub_Menu_no1, sub_menu_struct sub_menu[12][26], char const sub_menu_options[12][26][12][20], int menu_type)
 {
@@ -1453,10 +1481,15 @@ sub_jump_next_parameter:
 
     if ((sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_type) == 'O')
     {
-        par_val = 1 + New_menu_parameters[(sub_menu[Sub_Menu_no - 1][sub_display_cursor].variable_offset)];
-        if (sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_options < par_val)
         {
-            par_val = 1;
+            unsigned char inv_par_off =
+                sub_menu[Sub_Menu_no - 1][sub_display_cursor].variable_offset;
+
+            /* msk 06-Sep-2026: Inv1/Inv2 — EEPROM 0..8 → menu idx1..9 (idx9 Other ACSxxx active) */
+            par_val = InvMenu_ParValForDisplay(inv_par_off,
+                (unsigned char)New_menu_parameters[inv_par_off]);
+            if (sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_options < par_val)
+                par_val = 1;
         }
         {
                                 Clear_String(&clear_string, line3, 0,font16);

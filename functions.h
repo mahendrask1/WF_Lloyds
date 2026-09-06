@@ -155,7 +155,6 @@ void load_cell_avg_processing(void);
 void Totaliser1_Clear(void);
 void Modbus_Registers(void);
 /****************************************/
-
 /**************inverter/DIO**************/
 void Invter_ModCom(void);
 void Invter2_ModCom(void);
@@ -220,8 +219,8 @@ void Totaliser_Out(void); //Tot5aliser_Out (To display  count of T1 and/or T2 at
 /****************************************/
 //---controls.c
 void ControlActions(void);
-void ApplyFaultResetMarkers(void); /* M018-equivalent fault / inv comm clear */
-void VfdBootPostWarmupInit(void);  /* fault clear + sanitize after boot VFD warmup */
+void ApplyFaultResetMarkers(void); /* msk 19-Jun-2026: M018 / clear key / fault ack */
+void VfdBootPostWarmupInit(void);  /* msk 19-Jun-2026: boot fault clear + ACS reset queue */
 void Ext_WF_Controls(void);
 bool GetFieldMode(void);
 bool GetComMode(void);
@@ -232,5 +231,7 @@ bool GetGraMode(void);
 bool GetDeIntVolMode(void); 
 bool GetDeIntGraMode(void);
 bool GetIntGraMode(void);
-bool GetIntVolMode(void);   
+bool GetIntVolMode(void);
+int CurrentSetpointFromExternalAi(void); /* msk 19-Jun-2026: interlock DIO analog drives Current SP */
+void AioCommFaultApplySetpointClear(void); /* msk 19-Jun-2026: zero Ext+Current SP on AIO fault if analog mode */
 #endif

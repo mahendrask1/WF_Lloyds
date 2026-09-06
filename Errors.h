@@ -8,6 +8,8 @@ void Display_Error(void);
 void ErrorLatch_ClearAll(void);
 void ErrorLatch_ClearInvComm(void); /* msk29-may-26 */
 void ErrorLatch_ClearWfDriveModbusFault(void); /* msk 19-Jun-2026: Err8/18 from M042 Modbus path */
+void ErrorLatch_ClearAcsEfbCommInv1(void);     /* msk 03-Jul-2026: Err20 when drive EFBCOM cleared */
+void ErrorLatch_ClearAcsEfbCommInv2(void);     /* msk 03-Jul-2026: Err21 when drive EFBCOM cleared */
 void ErrorLatch_SetFault(unsigned char err); /* latch Err 14/15 from inv comm path */
 uint16_t ErrorLatch_GetBitmapLow(void);
 uint16_t ErrorLatch_GetBitmapHigh(void);
@@ -26,9 +28,10 @@ extern unsigned char Inv2_Comm_Fault;
 
 char DriveFaultErrorCode(void); /* pick ERR_DRIVE_M019 vs ERR_DRIVE_STSWD */
 
-extern unsigned char acs_inv1_efb_latched; /* msk 19-Jun-2026: sticky Err20 until M018 */
-extern unsigned char acs_inv2_efb_latched; /* msk 19-Jun-2026: sticky Err21 until M018 */
+extern unsigned char acs_inv1_efb_latched; /* msk 03-Jul-2026: Err20 while 6681; auto-clear when healthy */
+extern unsigned char acs_inv2_efb_latched; /* msk 03-Jul-2026: Err21 while 6681; auto-clear when healthy */
 void AcsEfbComm_ClearAll(void);          /* msk 19-Jun-2026: streak + latch — power-on/M018 */
+void AcsFaultResetQueueAll(void);        /* msk 19-Jun-2026: queue ACS 0x04FF — M018/clear/boot */
 
 extern uint16_t vfd_fault_reg_latched; /* ACS fault reg 400090 latched at trip */
 void VfdFault_LatchRegCode(uint16_t code);

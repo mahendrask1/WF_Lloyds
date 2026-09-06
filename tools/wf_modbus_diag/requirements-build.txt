@@ -1,0 +1,2 @@
+# Developer-only — build standalone EXE + installer (Build_Installer.bat)
+pyinstaller>=6.0

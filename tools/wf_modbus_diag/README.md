@@ -31,11 +31,17 @@ Settings → Apps → Advanced app settings → App execution aliases → turn O
 
 ## GUI tabs
 
-1. **Writable markers (M000-M039)** — Live readback, write checkbox, **Write** button per row
-2. **Status markers (M040-M099)** — Read-only (FC02)
-3. **Digital inputs (I000-I039)** — Read-only; **I024-I029** = VFD inputs
-4. **Output status (O000-O039)** — Read-only
-5. **Local/Remote focus** — Highlighted diagnostic signals
+Seven **numbered screen buttons** appear under **SELECT SCREEN** (large buttons — not small tabs). Click a button to switch the view below:
+
+1. **VFD inputs** — I024–I039 (start here for drive DI)
+2. **Panel inputs** — I000–I023
+3. **All I/O** — combined 80 points
+4. **Outputs** — O000–O039
+5. **Local / Remote** — highlighted field diagnosis
+6. **Write** — M000–M039 (FC05 writes)
+7. **Status** — M040–M099 (read-only)
+
+The active screen is **blue**; others are grey. Hover a button for a short description.
 
 Yellow rows = key local/remote signals (I024-I027, M008, M011, M051, M066, etc.).
 
@@ -53,3 +59,55 @@ If **I024/I027** do not change when switches move, the VFD Modbus DI mapping nee
 ## Writes
 
 Uses Modbus **FC05** (Write Single Coil) for M000-M039 only. Use with care on a running machine.
+
+---
+
+## Customer deployment (recommended)
+
+Send the customer **one file**:
+
+`installer\output\WF_Modbus_Diag_Setup.exe`
+
+They double-click it, accept defaults, and get:
+
+- Installed app under **Program Files\WF Lloyds\Modbus Diagnostic**
+- Start menu shortcut **WF Lloyds Modbus Diagnostic**
+- Optional desktop shortcut (checkbox during install)
+- Uninstall via Windows **Apps & features**
+
+**No Python install required** on the customer PC.
+
+### Connection reminder for customers
+
+- USB-RS485 to **AO module SIO** (Modbus), not the VFD RS485 bus
+- 19200 8E1, slave ID **1**
+- Controller menu: SIO Interface = **Modbus**
+
+---
+
+## Developer: build the installer
+
+On a Windows PC with **Python 3** and **Inno Setup 6** ([download](https://jrsoftware.org/isinfo.php)):
+
+1. Open a command prompt in `tools\wf_modbus_diag`
+2. Run **`Build_Installer.bat`**
+
+The script will:
+
+1. Install PyInstaller (via pip)
+2. Build `dist\WF_Modbus_Diag\WF_Modbus_Diag.exe` (bundled `data\` CSV tag maps)
+3. Compile `installer\output\WF_Modbus_Diag_Setup.exe`
+
+If Inno Setup is not installed, the standalone folder in `dist\WF_Modbus_Diag\` is still produced — zip it for manual deployment.
+
+Manual PyInstaller command (equivalent to the spec file):
+
+```bat
+pyinstaller --noconfirm --clean wf_modbus_diag.spec
+```
+
+Manual Inno Setup compile:
+
+```bat
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\WF_Modbus_Diag_Setup.iss
+```

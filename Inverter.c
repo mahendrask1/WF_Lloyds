@@ -12,6 +12,7 @@
 #include "plc.h"
 #include "Errors.h" /* msk29-may-26: ErrorLatch_ClearInvComm */
 #include "functions.h"
+#include "debug_ao_trace.h"
 
 uint16_t iocomerrcnts = 0;   /* io module comm error counts */
 uint16_t iocomcounts = 0;    /* counts increase in Timer0 IRQ every 5 ms */
@@ -32,6 +33,9 @@ extern uint16_t New_menu_parameters[105];
 extern uint16_t AO_cal_Values[6];
 extern char Error_No;
 extern char Check_Start;
+extern char Start_Stop_status;
+extern unsigned char Operating_Mode;
+extern unsigned int External_Setpoint, Current_Setpoint;
 extern float WF_Drive_Setpoint, PF_Drive_Setpoint;
 uint16_t Err_Counter_Inv,Err_Counter_Inv2;
 int Inv_Sp,Inv_Sp2;
@@ -155,11 +159,12 @@ static void Acs380560580_UnpackFc03(void)
     INV_modarray_rd[8] = DIO_ModBusMessage[14];
 }
 
-/* msk 30-Jun-2026: ACS two-step FC03 — fault reg 0x0059 first, then status 0x0003; EFB comm fault no trip */
+/* msk 19-Jun-2026: ACS two-step FC03 — fault reg 0x0059 first, then status 0x0003; EFB comm fault no trip */
 #define ACS_MODBUS_FAULT_REG_LO    0x59U   /* holding 400090 */
 #define ACS_EFB_COMM_FAULT_6681    6681U   /* ACS580 EFB comm loss fault */
 #define ACS_EFB_COMM_WARN_A7CE     0xA7CEU /* ACS580 EFB comm loss warning */
-#define ACS_EFB_COMM_STREAK_LATCH  20U     /* msk 19-Jun-2026: consecutive 6681/A7CE before Err20/21 */
+#define ACS_EFB_COMM_STREAK_LATCH    20U   /* msk 19-Jun-2026: consecutive 6681/A7CE + 0x38 before Err20/21 */
+#define ACS_EFB_COMM_RECOVERY_LATCH   5U   /* msk 03-Jul-2026: healthy decodes before clearing sticky Err20/21 */
 
 static unsigned char acs_inv_read_step;
 static unsigned char acs_inv2_read_step;
@@ -171,6 +176,8 @@ static unsigned char acs_efb_reset_pending;
 static unsigned char acs_efb_reset_inv2_pending;
 static unsigned char acs_inv1_efb_streak;
 static unsigned char acs_inv2_efb_streak;
+static unsigned char acs_inv1_efb_healthy_streak;
+static unsigned char acs_inv2_efb_healthy_streak;
 
 unsigned char acs_inv1_efb_latched;
 unsigned char acs_inv2_efb_latched;
@@ -179,6 +186,7 @@ static void InvComm_SetComError(unsigned char inv_num); /* msk 19-Jun-2026: fwd 
 
 static int InvIsAcsFamily(unsigned char inv_type)
 {
+    /* msk 06-Sep-2026: modern ACS — menu idx7/8/9 (EEPROM 6/7/8, Other ACSxxx); Inv==3 is ACS550 legacy */
     return (inv_type == 3 || inv_type == 6 || inv_type == 7 || inv_type == 8);
 }
 
@@ -240,9 +248,10 @@ static void AcsInv2ApplyEfbCommSuppress(void)
     INV2_Error_Flag = 0;
 }
 
-/* msk 19-Jun-2026: valid fault reg 6681/A7CE — count toward sticky Err20 (no trip) */
+/* msk 03-Jul-2026: 6681/A7CE + status 0x38 confirmed — count toward sticky Err20 (no trip) */
 static void AcsInv1EfbCommStreakHit(void)
 {
+    acs_inv1_efb_healthy_streak = 0;
     if (acs_inv1_efb_streak < ACS_EFB_COMM_STREAK_LATCH)
         acs_inv1_efb_streak++;
     if (acs_inv1_efb_streak >= ACS_EFB_COMM_STREAK_LATCH)
@@ -251,18 +260,59 @@ static void AcsInv1EfbCommStreakHit(void)
 
 static void AcsInv2EfbCommStreakHit(void)
 {
+    acs_inv2_efb_healthy_streak = 0;
     if (acs_inv2_efb_streak < ACS_EFB_COMM_STREAK_LATCH)
         acs_inv2_efb_streak++;
     if (acs_inv2_efb_streak >= ACS_EFB_COMM_STREAK_LATCH)
         acs_inv2_efb_latched = 1;
 }
 
+/* msk 03-Jul-2026: VFD EFBCOM cleared — drop sticky Err20/21 after recovery latch count */
+static void AcsInv1EfbCommHealthyHit(void)
+{
+    if (acs_inv1_efb_latched == 0)
+        return;
+    if (acs_inv1_efb_healthy_streak < 255)
+        acs_inv1_efb_healthy_streak++;
+    if (acs_inv1_efb_healthy_streak >= ACS_EFB_COMM_RECOVERY_LATCH) {
+        acs_inv1_efb_latched = 0;
+        acs_inv1_efb_streak = 0;
+        acs_inv1_efb_healthy_streak = 0;
+        ErrorLatch_ClearAcsEfbCommInv1();
+    }
+}
+
+static void AcsInv2EfbCommHealthyHit(void)
+{
+    if (acs_inv2_efb_latched == 0)
+        return;
+    if (acs_inv2_efb_healthy_streak < 255)
+        acs_inv2_efb_healthy_streak++;
+    if (acs_inv2_efb_healthy_streak >= ACS_EFB_COMM_RECOVERY_LATCH) {
+        acs_inv2_efb_latched = 0;
+        acs_inv2_efb_streak = 0;
+        acs_inv2_efb_healthy_streak = 0;
+        ErrorLatch_ClearAcsEfbCommInv2();
+    }
+}
+
 void AcsEfbComm_ClearAll(void)
 {
     acs_inv1_efb_streak = 0;
     acs_inv1_efb_latched = 0;
+    acs_inv1_efb_healthy_streak = 0;
     acs_inv2_efb_streak = 0;
     acs_inv2_efb_latched = 0;
+    acs_inv2_efb_healthy_streak = 0;
+}
+
+/* msk 19-Jun-2026: M018/clear/boot — queue ACS 0x04FF (drive LOCAL may ignore until panel reset) */
+void AcsFaultResetQueueAll(void)
+{
+    if (InvIsAcsFamily(Inv))
+        acs_efb_reset_pending = 1;
+    if (InvIsAcsFamily(Inv_1))
+        acs_efb_reset_inv2_pending = 1;
 }
 
 static void AcsInv1ApplyRealFaultTrip(void)
@@ -353,6 +403,7 @@ static void CommitVfdDiToPlc(unsigned char d24, unsigned char d25, unsigned char
     I028 = d28;
     I029 = d29;
 }
+
 
 void VfdBootCommWarmup_ms(unsigned int duration_ms)
 {
@@ -941,6 +992,12 @@ if((AO_Type !=0)&&(AO_Type !=1))
                 Error_No = 17;
                 ErrorLatch_SetFault(17); /* msk 19-Jun-2026: latch AO Comm Fail for display/trip */
                 AiBuffers_ClearAll();    /* msk 19-Jun-2026: zero AI — not last value before comm loss */
+                AioCommFaultApplySetpointClear(); /* msk 19-Jun-2026: Ext+Current only if interlock analog */
+                // #region agent log
+                dbg_ao_trace_snap(DBG_AO_SITE_FAULT_LATCH, (uint16_t)External_Setpoint,
+                                  (uint16_t)Current_Setpoint, M008, M002, Operating_Mode,
+                                  (uint8_t)Start_Stop_status, M044, AO_Comm_Fault);
+                // #endregion
             }
             break;
     }
@@ -1018,7 +1075,7 @@ static unsigned char Invter_RunAoDioSlot(int spin_i)
     }
     return 0;
 }
-
+//---------------------------------------------------------------------------------
 /* After long if/else/switch runs, each closing brace is tagged:  }// <what this } closes>  */
 void Invter_ModCom(void)
 {
@@ -1380,37 +1437,43 @@ void Invter_ModCom(void)
                             {
                                 unsigned char inv_decode_ok = 0;
 
-                                /* msk 19-Jun-2026: ACS 0x38 + EFB comm fault — reset, clear trip/error */
+                                /* msk 03-Jul-2026: ACS decode — Err20 streak only 6681/A7CE+0x38; auto-clear when healthy */
                                 if (InvIsAcsFamily(Inv)) {
                                     unsigned char fault_reg_valid = acs_inv_fault_reg_valid;
                                     uint16_t fault_word = acs_inv_fault_word;
+                                    unsigned char status_fault =
+                                        (INV_modarray_rd[0] == fault_code) ? 1 : 0;
 
                                     acs_inv_read_step = 0;
                                     acs_inv_fault_reg_valid = 0;
-                                    if (fault_reg_valid) {
-                                        if (AcsFaultCodeIsEfbCommOnly(fault_word)) {
-                                            AcsInv1ApplyEfbCommSuppress();
-                                            AcsInv1EfbCommStreakHit();
+                                    if (status_fault) {
+                                        if (fault_reg_valid) {
+                                            if (AcsFaultCodeIsEfbCommOnly(fault_word)) {
+                                                /* msk 03-Jul-2026: 6681/A7CE + 0x38 — suppress + Err20 streak */
+                                                AcsInv1ApplyEfbCommSuppress();
+                                                AcsInv1EfbCommStreakHit();
+                                                inv_decode_ok = 1;
+                                            } else if (fault_word == 0) {
+                                                /* msk 03-Jul-2026: 0x38 + fault reg 0 — suppress only, no Err20 */
+                                                AcsInv1ApplyEfbCommSuppress();
+                                                acs_inv1_efb_streak = 0;
+                                                inv_decode_ok = 1;
+                                            } else {
+                                                acs_inv1_efb_streak = 0;
+                                                acs_inv1_efb_healthy_streak = 0;
+                                                AcsInv1ApplyRealFaultTrip();
+                                            }
                                         } else {
-                                            acs_inv1_efb_streak = 0;
-                                        }
-                                    }
-                                    if (INV_modarray_rd[0] == fault_code) {
-                                        if (fault_reg_valid
-                                            && AcsFaultCodeIsEfbCommOnly(fault_word)) {
-                                            inv_decode_ok = 1;
-                                        } else if (fault_reg_valid) {
-                                            AcsInv1ApplyRealFaultTrip();
-                                        } else {
-                                            /* 0x38 before fault reg read — comm gap, no trip */
+                                            /* msk 19-Jun-2026: 0x38 before fault reg read — comm gap, no trip */
                                             AcsInv1ApplyEfbCommSuppress();
                                             inv_decode_ok = 1;
                                         }
                                     } else {
                                         INV_Error_Flag = 0;
-                                        /* clear Modbus-only M042 sticky; keep trip if M019 DIO fault */
                                         if ((M042 == 1) && (M019 == 1))
                                             AcsInv1ClearWfDriveFaultMarkers();
+                                        acs_inv1_efb_streak = 0;
+                                        AcsInv1EfbCommHealthyHit();
                                         inv_decode_ok = 1;
                                     }
                                 } else if (INV_modarray_rd[0] == fault_code) {
@@ -1908,33 +1971,39 @@ void Invter2_ModCom(void)
                             {
                                 unsigned char inv2_decode_ok = 0;
 
-                                /* msk 19-Jun-2026: ACS INV2 0x38 + EFB comm — reset, no trip */
+                                /* msk 03-Jul-2026: ACS INV2 — Err21 streak only 6681/A7CE+0x38; auto-clear when healthy */
                                 if (InvIsAcsFamily(Inv_1)) {
                                     unsigned char fault2_reg_valid = acs_inv2_fault_reg_valid;
                                     uint16_t fault2_word = acs_inv2_fault_word;
+                                    unsigned char status2_fault =
+                                        (INV_modarray_rd[0] == fault_code) ? 1 : 0;
 
                                     acs_inv2_read_step = 0;
                                     acs_inv2_fault_reg_valid = 0;
-                                    if (fault2_reg_valid) {
-                                        if (AcsFaultCodeIsEfbCommOnly(fault2_word)) {
-                                            AcsInv2ApplyEfbCommSuppress();
-                                            AcsInv2EfbCommStreakHit();
-                                        } else {
-                                            acs_inv2_efb_streak = 0;
-                                        }
-                                    }
-                                    if (INV_modarray_rd[0] == fault_code) {
-                                        if (fault2_reg_valid
-                                            && AcsFaultCodeIsEfbCommOnly(fault2_word)) {
-                                            inv2_decode_ok = 1;
-                                        } else if (fault2_reg_valid) {
-                                            AcsInv2ApplyRealFaultTrip();
+                                    if (status2_fault) {
+                                        if (fault2_reg_valid) {
+                                            if (AcsFaultCodeIsEfbCommOnly(fault2_word)) {
+                                                AcsInv2ApplyEfbCommSuppress();
+                                                AcsInv2EfbCommStreakHit();
+                                                inv2_decode_ok = 1;
+                                            } else if (fault2_word == 0) {
+                                                /* msk 03-Jul-2026: INV2 0x38 + fault reg 0 — suppress, no Err21 */
+                                                AcsInv2ApplyEfbCommSuppress();
+                                                acs_inv2_efb_streak = 0;
+                                                inv2_decode_ok = 1;
+                                            } else {
+                                                acs_inv2_efb_streak = 0;
+                                                acs_inv2_efb_healthy_streak = 0;
+                                                AcsInv2ApplyRealFaultTrip();
+                                            }
                                         } else {
                                             AcsInv2ApplyEfbCommSuppress();
                                             inv2_decode_ok = 1;
                                         }
                                     } else {
                                         INV2_Error_Flag = 0;
+                                        acs_inv2_efb_streak = 0;
+                                        AcsInv2EfbCommHealthyHit();
                                         inv2_decode_ok = 1;
                                     }
                                 } else if (INV_modarray_rd[0] == fault_code) {

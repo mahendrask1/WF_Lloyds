@@ -254,11 +254,15 @@ static void ErrorLatch_Collect(void)
         ErrorLatch_Add(ERR_DRIVE_M019);
     if (INV_Error_Flag == 1)
         ErrorLatch_Add(ERR_DRIVE_STSWD);
-    /* msk 19-Jun-2026: ACS EFB comm sticky — cleared only M018 / power-on */
+    /* msk 03-Jul-2026: ACS EFB comm — latched while 6681; auto-clear when drive healthy */
     if (acs_inv1_efb_latched == 1)
         ErrorLatch_Add(ERR_ACS_EFB_COMM_INV1);
+    else
+        error_latch[ERR_ACS_EFB_COMM_INV1] = 0;
     if (acs_inv2_efb_latched == 1)
         ErrorLatch_Add(ERR_ACS_EFB_COMM_INV2);
+    else
+        error_latch[ERR_ACS_EFB_COMM_INV2] = 0;
     if (M010 == 0)
         ErrorLatch_Add(9);
     else if (M044 == 0)
@@ -424,6 +428,24 @@ void ErrorLatch_ClearInvComm(void)
             Error_No = (char)next;
         }
     }
+}
+
+/* msk 03-Jul-2026: drive EFBCOM gone — drop Err20 display latch (mirror Err14 auto-clear) */
+void ErrorLatch_ClearAcsEfbCommInv1(void)
+{
+    error_latch[ERR_ACS_EFB_COMM_INV1] = 0;
+    ErrorLatch_AdvanceIfShowing(ERR_ACS_EFB_COMM_INV1);
+    if (Error_No == (char)ERR_ACS_EFB_COMM_INV1)
+        Error_No = 0;
+}
+
+/* msk 03-Jul-2026: INV2 EFBCOM gone — drop Err21 display latch */
+void ErrorLatch_ClearAcsEfbCommInv2(void)
+{
+    error_latch[ERR_ACS_EFB_COMM_INV2] = 0;
+    ErrorLatch_AdvanceIfShowing(ERR_ACS_EFB_COMM_INV2);
+    if (Error_No == (char)ERR_ACS_EFB_COMM_INV2)
+        Error_No = 0;
 }
 
 /* msk 19-Jun-2026: clear WF Modbus drive fault display (M042 path — not M019/M045 DIO) */

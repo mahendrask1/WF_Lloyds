@@ -97,14 +97,16 @@ class WfModbusDiagApp(tk.Tk):
 
         hint = ttk.Label(
             self,
-            text="Start on the 'VFD DI (24-39)' tab for WF drive inputs (I024–I039, Modbus FC02 addr 174–189). "
+            text="Click a screen button below to switch views. Start with VFD inputs for I024–I039. "
                  "Yellow rows = local/remote. Connect to the AO module SIO port to see Live values (0/1).",
             wraplength=1100,
         )
         hint.pack(fill=tk.X, padx=8, pady=(0, 4))
 
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+        self._tab_frames: Dict[str, ttk.Frame] = {}
+        self._tab_buttons: Dict[str, tk.Button] = {}
+        self._current_tab: Optional[str] = None
+        self._build_tab_navigation()
 
         self.writable_rows: Dict[str, dict] = {}
         self.readonly_trees: Dict[str, ttk.Treeview] = {}
@@ -116,11 +118,107 @@ class WfModbusDiagApp(tk.Tk):
         self._add_highlights_tab()
         self._add_writable_tab()
         self._add_readonly_tab("status_markers", "Status markers (M040-M099)", "FC02 read-only — marker status bits")
-        self.notebook.select(0)
+        self._layout_tab_buttons()
+        self._show_tab("vfd_di")
+
+    def _build_tab_navigation(self) -> None:
+        """Large button bar — clearer than default ttk.Notebook tabs for field users."""
+        nav_outer = tk.Frame(self, bg="#C8C8C8", relief=tk.GROOVE, bd=2)
+        nav_outer.pack(fill=tk.X, padx=8, pady=(0, 4))
+
+        tk.Label(
+            nav_outer,
+            text="  SELECT SCREEN  ",
+            bg="#C8C8C8",
+            fg="#1a1a1a",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor=tk.W, padx=8, pady=(6, 2))
+
+        self._tab_bar = tk.Frame(nav_outer, bg="#C8C8C8")
+        self._tab_bar.pack(fill=tk.X, padx=6, pady=(0, 8))
+
+        self._tab_content = ttk.Frame(self)
+        self._tab_content.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+
+        self._tab_specs: List[tuple] = []
+
+    def _register_tab(self, tab_id: str, button_label: str, tooltip: str = "") -> ttk.Frame:
+        """Register a content page and its navigation button."""
+        frame = ttk.Frame(self._tab_content)
+        self._tab_frames[tab_id] = frame
+        self._tab_specs.append((tab_id, button_label, tooltip))
+        return frame
+
+    def _layout_tab_buttons(self) -> None:
+        """Place navigation buttons in a 2-row grid after all tabs are registered."""
+        cols = 4
+        for idx, (tab_id, label, tip) in enumerate(self._tab_specs):
+            row, col = divmod(idx, cols)
+            btn = tk.Button(
+                self._tab_bar,
+                text=label,
+                font=("Segoe UI", 10, "bold"),
+                width=18,
+                height=2,
+                wraplength=160,
+                justify=tk.CENTER,
+                relief=tk.RAISED,
+                bd=3,
+                bg="#ECECEC",
+                fg="#111111",
+                activebackground="#0066CC",
+                activeforeground="white",
+                cursor="hand2",
+                command=lambda tid=tab_id: self._show_tab(tid),
+            )
+            btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            if tip:
+                self._attach_tooltip(btn, tip)
+            self._tab_buttons[tab_id] = btn
+        for c in range(cols):
+            self._tab_bar.columnconfigure(c, weight=1)
+
+    def _attach_tooltip(self, widget: tk.Widget, text: str) -> None:
+        tip = tk.Toplevel(widget)
+        tip.withdraw()
+        tip.overrideredirect(True)
+        tip_label = tk.Label(
+            tip, text=text, bg="#FFFFE0", fg="#000", relief=tk.SOLID, bd=1,
+            font=("Segoe UI", 9), padx=6, pady=4, wraplength=320,
+        )
+        tip_label.pack()
+
+        def enter(_event: tk.Event) -> None:
+            tip.deiconify()
+            x = widget.winfo_rootx() + 10
+            y = widget.winfo_rooty() + widget.winfo_height() + 4
+            tip.geometry(f"+{x}+{y}")
+
+        def leave(_event: tk.Event) -> None:
+            tip.withdraw()
+
+        widget.bind("<Enter>", enter)
+        widget.bind("<Leave>", leave)
+
+    def _show_tab(self, tab_id: str) -> None:
+        if tab_id not in self._tab_frames:
+            return
+        for tid, frame in self._tab_frames.items():
+            frame.pack_forget()
+        self._tab_frames[tab_id].pack(fill=tk.BOTH, expand=True)
+        self._current_tab = tab_id
+        for tid, btn in self._tab_buttons.items():
+            if tid == tab_id:
+                btn.configure(bg="#0066CC", fg="white", relief=tk.SUNKEN, bd=2)
+            else:
+                btn.configure(bg="#ECECEC", fg="#111111", relief=tk.RAISED, bd=3)
 
     def _add_writable_tab(self) -> None:
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="Writable markers (M000-M039)")
+        frame = self._register_tab(
+            "writable",
+            "6 — Write\nM000–M039",
+            "Write remote/local markers (FC05). Use with care on a running feeder.",
+        )
 
         header = ttk.Frame(frame)
         header.pack(fill=tk.X, padx=4, pady=4)
@@ -176,13 +274,20 @@ class WfModbusDiagApp(tk.Tk):
         canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"))
 
     def _add_readonly_tab(self, category: str, title: str, subtitle: str) -> None:
-        frame = ttk.Frame(self.notebook)
-        short = title.split("(")[0].strip()
         if category == "digital_outputs":
-            short = "DO (40)"
+            frame = self._register_tab(
+                "digital_outputs",
+                "4 — Outputs\nO000–O039",
+                "Read-only output status from the controller (FC02).",
+            )
         elif category == "status_markers":
-            short = "M status"
-        self.notebook.add(frame, text=short)
+            frame = self._register_tab(
+                "status_markers",
+                "7 — Status\nM040–M099",
+                "Read-only status markers from the controller (FC02).",
+            )
+        else:
+            frame = self._register_tab(category, title, subtitle)
 
         tags = self.by_category.get(category, [])
         header = ttk.Frame(frame)
@@ -202,8 +307,11 @@ class WfModbusDiagApp(tk.Tk):
                 tree.item(iid, tags=("hl",))
 
     def _add_vfd_di_tab(self) -> None:
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="VFD DI (24-39)")
+        frame = self._register_tab(
+            "vfd_di",
+            "1 — VFD inputs\nI024–I039",
+            "Drive digital inputs read via VFD Modbus (FC02 addr 174–189).",
+        )
         header = ttk.Frame(frame)
         header.pack(fill=tk.X, padx=4, pady=(4, 0))
         ttk.Label(
@@ -227,8 +335,11 @@ class WfModbusDiagApp(tk.Tk):
             tree.see("I024")
 
     def _add_panel_di_tab(self) -> None:
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="Panel DI (0-23)")
+        frame = self._register_tab(
+            "panel_di",
+            "2 — Panel inputs\nI000–I023",
+            "Panel digital inputs (FC02 addr 150–173).",
+        )
         header = ttk.Frame(frame)
         header.pack(fill=tk.X, padx=4, pady=(4, 0))
         ttk.Label(
@@ -247,8 +358,11 @@ class WfModbusDiagApp(tk.Tk):
                 tree.item(tag.tag, tags=("hl",))
 
     def _add_combined_io_tab(self) -> None:
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="DI + DO (80)")
+        frame = self._register_tab(
+            "all_io",
+            "3 — All I/O\n80 points",
+            "All digital inputs and output status in one list.",
+        )
         io_tags = (
             self.by_category.get("digital_inputs", [])
             + self.by_category.get("digital_outputs", [])
@@ -274,8 +388,11 @@ class WfModbusDiagApp(tk.Tk):
                 tree.item(iid, tags=("hl",))
 
     def _add_highlights_tab(self) -> None:
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="Local/Remote focus")
+        frame = self._register_tab(
+            "highlights",
+            "5 — Local / Remote",
+            "Key local/remote signals for field diagnosis (highlighted rows).",
+        )
         ttk.Label(
             frame,
             text="Key markers plus ALL DI/DO for field local/remote diagnosis.",

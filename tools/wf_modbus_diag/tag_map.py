@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -66,6 +67,9 @@ def _signal_group(tag: str) -> str:
 
 
 def _tool_dir() -> Path:
+    """App root — PyInstaller bundle dir when frozen, else this script's folder."""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
     return Path(__file__).resolve().parent
 
 
@@ -77,9 +81,10 @@ def _find_csv(name: str) -> Path:
     local = _tool_dir() / "data" / name
     if local.exists():
         return local
-    repo = _repo_root() / name
-    if repo.exists():
-        return repo
+    if not getattr(sys, "frozen", False):
+        repo = _repo_root() / name
+        if repo.exists():
+            return repo
     raise FileNotFoundError(f"Missing tag map CSV: {name}")
 
 
