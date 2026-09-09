@@ -191,8 +191,8 @@ sub_menu_struct sub_menu1[12][26] =
         {'F',255,255}
     },
     {    //3 Communication
-        {'O',9,70},         //O9 Inv1 — msk 06-Sep-2026: idx9 Other ACSxxx ACTIVE (EEPROM 8); scroll 8→9→OFF
-        {'O',9,71},         //O9 Inv2 — msk 06-Sep-2026: idx9 Other ACSxxx ACTIVE (EEPROM 8); mirror Inv1
+        {'O',9,70},         //O9    Inv1
+        {'O',9,71},         //O9    Inv2
         {'O',4,29},         //O3    SIO (PLC)_Interface
         {'O',3,30},         //O5    SIO Baud
         {'O',3,31},         //O3    SIO Setup Parity
@@ -389,12 +389,8 @@ char const sub_menu_options1[13][26][12][20]=
             },
 
             {      // 3 Communication
-                    /* msk 06-Sep-2026: Inv1 O9 ACTIVATED — idx7 ACS380/560 (EEPROM 6), idx8 ACS580/850 (7),
-                     * idx9 Other ACSxxx (EEPROM 8). HOR: 8→9→OFF. Stored 6/7/8 = modern ACS (Inverter.c).
-                     * Future drive with new Modbus: rename idx9 label; extend Inverter.c Inv/Inv_1==8 path. */
-                    {{"Inv1\0"},{"OFF\0"},{"ATV312\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380/560\0"},{"ACS580/850\0"},{"Other ACSxxx\0"}}, /* msk 06-Sep-2026: idx9 active */
-                    /* msk 06-Sep-2026: Inv2 O9 ACTIVATED — mirror Inv1 idx7/8/9 (EEPROM par 71). */
-                    {{"Inv2\0"},{"OFF\0"},{"ATV312-\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380/560\0"},{"ACS580/850\0"},{"Other ACSxxx\0"}}, /* msk 06-Sep-2026: idx9 active */
+                    {{"Inv1\0"},{"OFF\0"},{"ATV312\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380\0"},{"ACS560\0"},{"ACS580\0"}},
+                    {{"Inv2\0"},{"OFF\0"},{"ATV312-\0"},{"PF4M\0"},{"ACS550\0"},{"J1000\0"},{"J7 Mini\0"},{"ACS380\0"},{"ACS560\0"},{"ACS580\0"}},
 //                    {{"DIO Module\0"},{"OFF\0"},{"4Ip/4Op\0"},{"8Ip/8Op\0"}},
                     {{"SIO Interface\0"},{"Off\0"},{"Modbus-RTU\0"},{"Modbus-TCP\0"},{"Profibus-DP\0"}},
                     {{"SIO Baud rate\0"},{"19200\0"},{"38400\0"},{"57600\0"}},
@@ -1031,73 +1027,188 @@ sys_jump3:
     goto sys_jump1;
 }
 //-------------------------------------------------------
-void AO_Module_Select()
+/* msk 06-Sep-2026: AO module types — menu only; RS485/calibration uses AO_Type (Module1) until dual-AO comm added */
+#define AO_MOD_TYPE_COUNT           4U
+#define AO_MOD_TYPE_NONE            3U
+
+static const char* const ao_module_type_names[AO_MOD_TYPE_COUNT] = {
+    "1> UI0-2AO(VEAVE)",
+    "2> WIN-IO-2AOMC   WittelIB",
+    "3> Internal       (Unavailable)",
+    "4> NONE"
+};
+
+static unsigned char AoModuleMenu_ClampType(unsigned char ao_type)
+{
+    if (ao_type >= AO_MOD_TYPE_COUNT)
+        return AO_MOD_TYPE_NONE;
+    return ao_type;
+}
+
+static void AoModuleMenu_MigrateLegacy(void)
+{
+    /* msk 06-Sep-2026: map legacy AO_Type (par 92) into Module1 when par 98/99 unset or invalid */
+    if (AO_Module1_Type >= AO_MOD_TYPE_COUNT) {
+        AO_Module1_Type = (AO_Type < AO_MOD_TYPE_COUNT) ? AO_Type : 2U;
+    }
+    if (AO_Module2_Type >= AO_MOD_TYPE_COUNT) {
+        AO_Module2_Type = AO_MOD_TYPE_NONE;
+    }
+    if (AO_Module1_Type == 0U && AO_Module2_Type == 0U &&
+        AO_Type > 0U && AO_Type < AO_MOD_TYPE_COUNT) {
+        AO_Module1_Type = AO_Type;
+        AO_Module2_Type = AO_MOD_TYPE_NONE;
+    }
+}
+
+static unsigned char AoModuleMenu_GetType(unsigned char module_no)
+{
+    if (module_no == 2U)
+        return AoModuleMenu_ClampType(AO_Module2_Type);
+    return AoModuleMenu_ClampType(AO_Module1_Type);
+}
+
+static void AoModuleMenu_SetType(unsigned char module_no, unsigned char ao_type)
+{
+    ao_type = AoModuleMenu_ClampType(ao_type);
+    if (module_no == 2U) {
+        AO_Module2_Type = ao_type;
+    } else {
+        AO_Module1_Type = ao_type;
+        AO_Type = ao_type; /* msk 06-Sep-2026: keep legacy AO_Type in sync with Module1 for existing comm code */
+    }
+}
+
+static void AoModuleMenu_PrintTypeLines(unsigned char ao_type)
 {
     unsigned char i;
-    unsigned char ao_type = AO_Type;
-    const char* ao_names[] = {
-        "1> UI0-2AO(VEAVE)",
-        "2> WIN-IO-2AOMC   WittelIB",
-        "3> Internal       (Unavailable)"
-    };
-    const unsigned char ao_type_count = 3;
-    bool running = true;
+    const char* name;
     char line3str[18] = {0};
     char line4str[18] = {0};
-    const char* name;
+
+    ao_type = AoModuleMenu_ClampType(ao_type);
+    name = ao_module_type_names[ao_type];
+    if (strlen(name) <= 17U) {
+        calib_string_ptr = (char*)name;
+        Print_String(&calib_string_ptr, line3, 0, font10, 0);
+        Clear_String(&clear_string, line4, 0, font10);
+    } else {
+        memset(line3str, 0, sizeof(line3str));
+        memset(line4str, 0, sizeof(line4str));
+        memcpy(line3str, name, 17);
+        line3str[17] = '\0';
+        strncpy(line4str, name + 17, 17);
+        line4str[17] = '\0';
+        calib_string_ptr = line3str;
+        Print_String(&calib_string_ptr, line3, 0, font10, 0);
+        calib_string_ptr = line4str;
+        Print_String(&calib_string_ptr, line4, 0, font10, 0);
+    }
+    for (i = 0; i < 18U; i++) {
+        line3str[i] = ' ';
+        line4str[i] = ' ';
+    }
+}
+
+/* msk 06-Sep-2026: INC/HOR/CLEAR type pick for Module 1 or 2; returns 1 if saved, 0 if cancelled */
+static unsigned char AoModuleMenu_SelectType(unsigned char module_no)
+{
+    unsigned char ao_type = AoModuleMenu_GetType(module_no);
+    char title[22];
+
+    sprintf(title, "AO MODULE %u TYPE", (unsigned int)module_no);
     Clear_LCD();
     super_delay(20);
-    while(running)
-    {
+
+    for (;;) {
         Key_Input = NO_KEY;
-        //Clear_LCD();
-        calib_string_ptr = "AO_MODULE SELECT";
+        calib_string_ptr = title;
         Print_String(&calib_string_ptr, line1, 0, font10, 0);
-        calib_string_ptr = "INC key to select";
+        calib_string_ptr = "INC change HOR save";
         Print_String(&calib_string_ptr, line2, 0, font10, 0);
-        super_delay(10);
-        name = ao_names[ao_type];
-        if(strlen(name) <= 17) {
-            calib_string_ptr = (char*)name;
-            Print_String(&calib_string_ptr, line3, 0, font10, 0);
-        }
-        else
-        {
-            memset(line3str, 0, sizeof(line3str));
-            memset(line4str, 0, sizeof(line4str));
-            memcpy(line3str, name, 17);
-            line3str[17] = '\0';
-            strncpy(line4str, name+17, 17);
-            line4str[17] = '\0';
-            calib_string_ptr = line3str;
-            Print_String(&calib_string_ptr, line3, 0, font10, 0);
-            calib_string_ptr = line4str;
-            Print_String(&calib_string_ptr, line4, 0, font10, 0);
-        }
+        AoModuleMenu_PrintTypeLines(ao_type);
+        calib_string_ptr = "CLEAR: cancel";
+        Print_String(&calib_string_ptr, line6, 0, font10, 0);
         super_delay(30);
         key_check_routine();
-        if(Key_Input == K_INC)
-        {
-            for(i=0;i<18;i++)
-            {
-                line3str[i]=' ';
-                line4str[i]=' ';
-            }
 
-            calib_string_ptr = line3str;
-            Print_String(&calib_string_ptr, line3, 0, font10, 0);
-            calib_string_ptr = line4str;
-            Print_String(&calib_string_ptr, line4, 0, font10, 0);
+        if (Key_Input == K_INC) {
+            ao_type = (unsigned char)((ao_type + 1U) % AO_MOD_TYPE_COUNT);
             Clear_LCD();
-            ao_type = (ao_type + 1) % ao_type_count;
-        }
-        else if(Key_Input == HOR) {
-            AO_Type = ao_type;
+        } else if (Key_Input == HOR) {
+            AoModuleMenu_SetType(module_no, ao_type);
             save_par_eeprom();
+            return 1U;
+        } else if (Key_Input == CL) {
+            return 0U;
+        }
+    }
+}
+
+/* msk 06-Sep-2026: SYSTEM→AO Module — pick Module 1/2 then type (menu/EEPROM only; comm later) */
+void AO_Module_Select()
+{
+    unsigned char module_no = 1U;
+
+    AoModuleMenu_MigrateLegacy();
+
+ModulePick:
+    Clear_LCD();
+    super_delay(20);
+
+    for (;;) {
+        Key_Input = NO_KEY;
+        calib_string_ptr = "AO MODULE SELECT";
+        Print_String(&calib_string_ptr, line1, 0, font10, 0);
+        calib_string_ptr = "INC change HOR next";
+        Print_String(&calib_string_ptr, line2, 0, font10, 0);
+        if (module_no == 1U) {
+            calib_string_ptr = "> Module 1";
+        } else {
+            calib_string_ptr = "> Module 2";
+        }
+        Print_String(&calib_string_ptr, line3, 0, font10, 0);
+        calib_string_ptr = "CLEAR: exit";
+        Print_String(&calib_string_ptr, line6, 0, font10, 0);
+        super_delay(30);
+        key_check_routine();
+
+        if (Key_Input == K_INC) {
+            module_no = (module_no == 1U) ? 2U : 1U;
+            Clear_LCD();
+        } else if (Key_Input == CL) {
+            return;
+        } else if (Key_Input == HOR) {
             break;
         }
-        else if(Key_Input == CL) {
-            break;
+    }
+
+    if (AoModuleMenu_SelectType(module_no) == 0U) {
+        goto ModulePick;
+    }
+
+    if (module_no == 1U) {
+        Clear_LCD();
+        super_delay(20);
+        for (;;) {
+            Key_Input = NO_KEY;
+            calib_string_ptr = "Module 1 saved";
+            Print_String(&calib_string_ptr, line1, 0, font10, 0);
+            calib_string_ptr = "HOR: set Module 2";
+            Print_String(&calib_string_ptr, line2, 0, font10, 0);
+            calib_string_ptr = "CLEAR: finished";
+            Print_String(&calib_string_ptr, line6, 0, font10, 0);
+            super_delay(30);
+            key_check_routine();
+            if (Key_Input == HOR) {
+                if (AoModuleMenu_SelectType(2U) == 0U) {
+                    goto ModulePick;
+                }
+                return;
+            }
+            if (Key_Input == CL) {
+                return;
+            }
         }
     }
 }
@@ -1410,30 +1521,6 @@ void display_main_menu_routine(const main_menu_struct Main_menu[Main_Menu_Max], 
 }
 //-------------------------------------------------------
 
-/* msk 06-Sep-2026: Inv1/Inv2 O9 ACTIVATED — idx9 Other ACSxxx ↔ EEPROM 8; idx7/8 ↔ EEPROM 6/7.
- * HOR scroll includes idx9 (8→9→OFF). Stored 6/7/8 → modern ACS in Inverter.c (InvIsAcsFamily). */
-#define INV_MENU_EEPROM_OTHER_ACS   8U   /* msk 06-Sep-2026: menu idx9 Other ACSxxx stored value */
-
-static unsigned char InvMenu_IsInvDrivePar(unsigned char var_offset)
-{
-    return (var_offset == 70U || var_offset == 71U);
-}
-
-static unsigned char InvMenu_ParValForDisplay(unsigned char var_offset, unsigned char stored)
-{
-    unsigned char par_val;
-
-    if (!InvMenu_IsInvDrivePar(var_offset))
-        return (unsigned char)(1U + stored);
-
-    /* msk 06-Sep-2026: EEPROM 0..8 → idx1..9; corrupt stored>8 shows OFF */
-    if (stored > INV_MENU_EEPROM_OTHER_ACS)
-        return 1U;
-
-    par_val = (unsigned char)(1U + stored);
-    return par_val;
-}
-
 //-------------------------------------------------------
 void Sub_Menu_Routine(main_menu_struct Main_menu[Main_Menu_Max], char Sub_Menu_no1, sub_menu_struct sub_menu[12][26], char const sub_menu_options[12][26][12][20], int menu_type)
 {
@@ -1481,15 +1568,10 @@ sub_jump_next_parameter:
 
     if ((sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_type) == 'O')
     {
+        par_val = 1 + New_menu_parameters[(sub_menu[Sub_Menu_no - 1][sub_display_cursor].variable_offset)];
+        if (sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_options < par_val)
         {
-            unsigned char inv_par_off =
-                sub_menu[Sub_Menu_no - 1][sub_display_cursor].variable_offset;
-
-            /* msk 06-Sep-2026: Inv1/Inv2 — EEPROM 0..8 → menu idx1..9 (idx9 Other ACSxxx active) */
-            par_val = InvMenu_ParValForDisplay(inv_par_off,
-                (unsigned char)New_menu_parameters[inv_par_off]);
-            if (sub_menu[Sub_Menu_no - 1][sub_display_cursor].par_options < par_val)
-                par_val = 1;
+            par_val = 1;
         }
         {
                                 Clear_String(&clear_string, line3, 0,font16);

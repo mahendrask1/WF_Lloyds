@@ -268,6 +268,9 @@ void Load_Wf_defaults(void)
     AO3_Value = 0;
     AI_Nos = 0;
     AO_Nos = 0;
+    AO_Module1_Type = 2; /* msk 06-Sep-2026: default Internal (Unavailable) until SYSTEM menu set */
+    AO_Module2_Type = 3; /* msk 06-Sep-2026: default NONE — second AO slot off */
+    AO_Type = AO_Module1_Type; /* msk 06-Sep-2026: legacy par 92 follows Module1 until dual-AO comm */
 
     Pre_Hopper = 0;
     PI = 0;

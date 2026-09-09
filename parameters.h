@@ -100,14 +100,14 @@
 #define Profibus_Baudrate                 *(New_menu_parameters+ 90 )
 #define Tacho_ip                          *(New_menu_parameters+ 91 ) //added on 28/05/2018
 
-#define AO_Type               *(New_menu_parameters+ 92 )   // AO Module Type selection
+#define AO_Type               *(New_menu_parameters+ 92 )   // AO Module Type selection (legacy; sync from Module1 on save)
 #define AI_Type               *(New_menu_parameters+ 93 )   // AI Module Type selection
 #define DIO_Type              *(New_menu_parameters+ 94 )  // DIO Module Type selection
 #define Dac1_ScaleFactor       *(New_menu_parameters+ 95 )   //DAC1 scale factor (10000=100.00%)
 #define Dac2_ScaleFactor       *(New_menu_parameters+ 96 )   //DAC2 scale factor (10000=100.00%)
 #define Dac3_ScaleFactor       *(New_menu_parameters+ 97 )   //DAC3 scale factor (10000=100.00%)
-#define free6                 *(New_menu_parameters+ 98 )   //6 values
-#define free7                 *(New_menu_parameters+ 99 )   //6 values
+#define AO_Module1_Type       *(New_menu_parameters+ 98 )   /* msk 06-Sep-2026: SYSTEM AO slot 1 type */
+#define AO_Module2_Type       *(New_menu_parameters+ 99 )   /* msk 06-Sep-2026: SYSTEM AO slot 2 type */
 #define free8                 *(New_menu_parameters+ 100 )  //6 values
 #define free9                 *(New_menu_parameters+ 101 )  //6 values
 #define free10                *(New_menu_parameters+ 102 )  //6 values

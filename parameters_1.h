@@ -100,8 +100,8 @@
 #define free3                *(New_menu_parameters+    95    )    //6 values
 #define free4                *(New_menu_parameters+    96    )    //6 values
 #define free5                *(New_menu_parameters+    97    )    //6 values
-#define free6                *(New_menu_parameters+    98    )    //6 values
-#define free7                *(New_menu_parameters+    99    )    //6 values
+#define AO_Module1_Type      *(New_menu_parameters+    98    )    /* msk 06-Sep-2026: SYSTEM AO slot 1 */
+#define AO_Module2_Type      *(New_menu_parameters+    99    )    /* msk 06-Sep-2026: SYSTEM AO slot 2 */
 #define free8                *(New_menu_parameters+    100    )    //6 values
 #define free9                *(New_menu_parameters+    101    )    //6 values
 #define free10                *(New_menu_parameters+    102    )    //6 values

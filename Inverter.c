@@ -186,7 +186,7 @@ static void InvComm_SetComError(unsigned char inv_num); /* msk 19-Jun-2026: fwd 
 
 static int InvIsAcsFamily(unsigned char inv_type)
 {
-    /* msk 06-Sep-2026: modern ACS — menu idx7/8/9 (EEPROM 6/7/8, Other ACSxxx); Inv==3 is ACS550 legacy */
+    /* ACS550 legacy Inv==3; menu idx7/8/9 → EEPROM 6/7/8 (ACS380/560/580) */
     return (inv_type == 3 || inv_type == 6 || inv_type == 7 || inv_type == 8);
 }
 
