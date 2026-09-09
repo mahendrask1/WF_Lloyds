@@ -2,7 +2,7 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
-#define Main_Menu_Max 15
+#define Main_Menu_Max 16
 #define Menu_String_Max_Size 20
 #define Sel_par_size 10
 #define Sel_string_size 20

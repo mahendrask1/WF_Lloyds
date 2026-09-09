@@ -85,6 +85,7 @@ extern char calib_string[20];
 extern char *calib_string_ptr ;
 extern unsigned char no_menu_par[12];
 extern char no_of_menus;
+extern const char *IT_LOGO1; /* initialize.c — firmware version string for Firmware menu */
 unsigned char par_dec_pt,par_type ;
 
 unsigned char download_menu_par[2900];
@@ -261,7 +262,8 @@ const main_menu_struct Main_menu1[Main_Menu_Max]=
     {'M',0,"10 Setpoint"},
     {'M',0,"11 Sync"},
     {'M',0,"12 IO Monitor -"},
-    {'M',0,"13 SYSTEM -"},
+    {'M',0,"13 Ext. Module Conf"},
+    {'M',0,"14 Firmware      "},
     {'F',255,"9 FF"}
 };
 
@@ -280,6 +282,8 @@ const main_menu_struct Main_menu2[Main_Menu_Max]=
     {'M',0,"Setpoint"},
     {'M',0,"Sync"},
     {'M',0,"IO Monitor"},
+    {'M',0,"Ext. Module Conf"},
+    {'M',0,"Firmware"},
     {'F',255,"9 FF"}
 };
 
@@ -443,8 +447,8 @@ char const sub_menu_options1[13][26][12][20]=
             {     // 11 IO Monitor
                 {{"IO Monitor\0"}},
             },
-            {     // 12 SYSTEM -
-                {{"System Update\0"}},
+            {     // 12 unused (was SYSTEM; menus 13/14 use dedicated handlers)
+                {{"Ext Module Conf\0"}},
             },
 
         };
@@ -1253,72 +1257,61 @@ void DIO_Module_Select()
     }
 }
 //-------------------------------------------------------
-void System_Update_Menu()
+/* msk 09-Sep-2026: main menu 13 — external module type (AO/AI/DIO); Module 2 AO WIP */
+void Ext_Module_Conf_Menu(void)
 {
-
     Clear_LCD();
     super_delay(20);
-Menu_Start:
-    Key_Input=NO_KEY;
+ExtModMenu_Start:
+    Key_Input = NO_KEY;
     calib_string_ptr = "Press the Key.";
-    Print_String(&calib_string_ptr,line1,0,font10,0);
-    calib_string_ptr = "1> Firmware Upgrade";
-    Print_String(&calib_string_ptr,line2,0,font10,0);
-    calib_string_ptr = "2> AO Module     ";
-    Print_String(&calib_string_ptr,line3,0,font10,0);
-    calib_string_ptr = "3> AI Module     ";
-    Print_String(&calib_string_ptr,line4,0,font10,0);
-    calib_string_ptr = "4> DIO Module    ";
-    Print_String(&calib_string_ptr,line5,0,font10,0);
+    Print_String(&calib_string_ptr, line1, 0, font10, 0);
+    calib_string_ptr = "1> AO Module     ";
+    Print_String(&calib_string_ptr, line2, 0, font10, 0);
+    calib_string_ptr = "2> AI Module     ";
+    Print_String(&calib_string_ptr, line3, 0, font10, 0);
+    calib_string_ptr = "3> DIO Module    ";
+    Print_String(&calib_string_ptr, line4, 0, font10, 0);
     calib_string_ptr = "CLEAR:  - Exit   ";
-    Print_String(&calib_string_ptr,line6,0,font10,0);
-    //key_check_routine(); //check for key press
-        //eeprom_read_block(8180,&FWBLOCK[0],3);
-    Menu_Jump1:
-    if(flag==1)//flag becomes 1 after every 5 ms (Timer0 tick)
-    {
-        flag=0;
-        Key_Input=NO_KEY;
-        super_delay(10);
-        //if(scan_count%25 ==0)  //every 35th/20th scan
-        //{
-            key_check_routine(); //check for key press
-        //}
+    Print_String(&calib_string_ptr, line6, 0, font10, 0);
 
-        if(    Key_Input==NO_KEY)
+ExtModMenu_Jump1:
+    if (flag == 1)
+    {
+        flag = 0;
+        Key_Input = NO_KEY;
+        super_delay(10);
+        key_check_routine();
+
+        if (Key_Input == NO_KEY)
         {
-            goto Menu_Jump1;              //display calibration routine
+            goto ExtModMenu_Jump1;
         }
-        if(Key_Input==Key1)  //key '1" pressed                       // //Chanel 1<> selection  display
-        {
-            Clear_LCD();
-            Firmware_Update_Menu();
-        }
-        else if(Key_Input==Key2)
+        if (Key_Input == Key1)
         {
             Clear_LCD();
             AO_Module_Select();
             Clear_LCD();
-            goto Menu_Start;
+            goto ExtModMenu_Start;
         }
-        else if(Key_Input==Key3)
+        else if (Key_Input == Key2)
         {
-                        Clear_LCD();
+            Clear_LCD();
             AI_Module_Select();
             Clear_LCD();
-            goto Menu_Start;
+            goto ExtModMenu_Start;
         }
-        else if(Key_Input==Key4)
+        else if (Key_Input == Key3)
         {
-                        Clear_LCD();
+            Clear_LCD();
             DIO_Module_Select();
             Clear_LCD();
-            goto Menu_Start;
+            goto ExtModMenu_Start;
         }
-        else if(Key_Input==CL)
+        else if (Key_Input == CL)
         {
             Clear_LCD();
-            Key_Input=NO_KEY;
+            Key_Input = NO_KEY;
             return;
         }
         super_delay(20);
@@ -1327,7 +1320,56 @@ Menu_Start:
     {
         scan_count = 0;
     }
-    goto Menu_Start;
+    goto ExtModMenu_Start;
+}
+
+/* msk 09-Sep-2026: main menu 14 — firmware upgrade; IT_LOGO1 version on line6 */
+void Firmware_Menu(void)
+{
+    Clear_LCD();
+    super_delay(20);
+FwMenu_Start:
+    Key_Input = NO_KEY;
+    calib_string_ptr = "Firmware";
+    Print_String(&calib_string_ptr, line1, 0, font10, 0);
+    calib_string_ptr = "1> Upgrade       ";
+    Print_String(&calib_string_ptr, line2, 0, font10, 0);
+    calib_string_ptr = "CLEAR:  - Exit   ";
+    Print_String(&calib_string_ptr, line3, 0, font10, 0);
+    Print_String(&IT_LOGO1, line6, 0, font10, 0);
+
+FwMenu_Jump1:
+    if (flag == 1)
+    {
+        flag = 0;
+        Key_Input = NO_KEY;
+        super_delay(10);
+        key_check_routine();
+
+        if (Key_Input == NO_KEY)
+        {
+            goto FwMenu_Jump1;
+        }
+        if (Key_Input == Key1)
+        {
+            Clear_LCD();
+            Firmware_Update_Menu();
+            Clear_LCD();
+            goto FwMenu_Start;
+        }
+        else if (Key_Input == CL)
+        {
+            Clear_LCD();
+            Key_Input = NO_KEY;
+            return;
+        }
+        super_delay(20);
+    }
+    if (scan_count >= 200)
+    {
+        scan_count = 0;
+    }
+    goto FwMenu_Start;
 }
 //-------------------------------------------------------
 
@@ -2010,7 +2052,11 @@ back123:
             }
             else if ((Sub_Menu_no == 13) && (Check_Start == 10))
             {
-                System_Update_Menu();
+                Ext_Module_Conf_Menu();
+            }
+            else if ((Sub_Menu_no == 14) && (Check_Start == 10))
+            {
+                Firmware_Menu();
             }
             else
             {
