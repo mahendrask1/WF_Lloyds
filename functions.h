@@ -80,6 +80,10 @@ void filter_para_calc(void);
 
 void after_menu_initialize(void);
 void main_initialize_routine(void);
+/* msk 30-Oct-2026: sanitize menu/calib after Load_Wf_defaults */
+void Parameter_fix_30_oct_26_1(void);
+void Parameter_fix_30_oct_26_2(void);
+void Parameter_fix_30_oct_26_3(void);
 
 /*****************************************/
 

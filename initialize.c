@@ -28,10 +28,15 @@ char *cstrptr = cstr1;
 extern uint16_t AO_cal_Values[6];
 void check_defaults(void);
 void Load_Wf_defaults(void);
+void Parameter_fix_30_oct_26_1(void);
+void Parameter_fix_30_oct_26_2(void);
+void Parameter_fix_30_oct_26_3(void);
 void eeprom_write_array(unsigned int , unsigned char * , unsigned int );
 //-----------------------------------------------
 void Print_String(char **string, char start_row, char start_col, char font_size, char underline_no);
 extern unsigned long Present_Count,Present_Count_ch2,Count_DL_ch2,Span_Count,Span_Count_ch2,zero_load,zero_count_cal,zero_load_ch2,full_load,full_load_ch2;
+extern unsigned long Min_Count_Channel1,Min_Count_Channel2,Min_Count_Channel3,Max_Count_Channel1,Max_Count_Channel2,Max_Count_Channel3;
+extern unsigned long Dac1_SpanCounts,Dac2_SpanCounts,Dac3_SpanCounts;
 //Count_DL
 unsigned long Calib_Load,Calib_Load_ch2;
 extern unsigned long BL_sum,BL_reg[1600],BL_avg;
@@ -174,7 +179,7 @@ extern uint16_t Rx_Err_Counter;
 extern char OLED_RAM[128][64];
 uint16_t  temp_val_;
 const char *IT_LOGO  = "AAG Ultron+";
-const char *IT_LOGO1 = "WFMOD 5.0b"; /* msk 03-Jul-2026: EFBCOM Err20 follows drive recovery */
+const char *IT_LOGO1 = "WFMOD 5.0c"; /* msk 03-Jul-2026: EFBCOM Err20 follows drive recovery */
 unsigned char Parameter_checkbit[8];
 extern unsigned char Dev_ID;
 extern const main_menu_struct Main_menu1[Main_Menu_Max];
@@ -321,12 +326,219 @@ void Load_Wf_defaults(void)
     calib_val[2] = (unsigned long)zero_count_cal;
     calib_val[6] = BL_avg = 350000;
     calib_val[7] = Calib_Load = 1000;
+
+    /* msk 30-Oct-2026: missing defaults that used to stay as virgin-EEPROM garbage */
+    Dac1_ScaleFactor = 10000;
+    Dac2_ScaleFactor = 10000;
+    Dac3_ScaleFactor = 10000;
+    AI_Type = 0;
+    DIO_Type = 0;
+    Capacity_1 = Hopper_Capacity;
+    New_menu_parameters[52] = ((uint16_t *)&Capacity_1)[1];
+    New_menu_parameters[84] = ((uint16_t *)&Capacity_1)[0];
+
+    /* msk 30-Oct-2026: clamp / repair out-of-range values used in display and calculations */
+    Parameter_fix_30_oct_26_1();
+    Parameter_fix_30_oct_26_2();
+    Parameter_fix_30_oct_26_3();
+}
+
+/* msk 30-Oct-2026: menu display / option indices + divisors used online */
+void Parameter_fix_30_oct_26_1(void)
+{
+    if (Dec_Point_Capacity > 3U)
+        Dec_Point_Capacity = 1U;
+    if (Dec_Pt_Totaliser1 > 3U)
+        Dec_Pt_Totaliser1 = 1U;
+    if (Dec_Pt_Totaliser2 > 3U)
+        Dec_Pt_Totaliser2 = 1U;
+
+    if (Units_Capacity > 1U)
+        Units_Capacity = 1U;
+    if (Units_Totaliser1 > 1U)
+        Units_Totaliser1 = 1U;
+    if (Units_Totaliser2 > 1U)
+        Units_Totaliser2 = 1U;
+
+    if (Capacity == 0U)
+        Capacity = 5000U;
+    if (Tacho_Freq == 0U)
+        Tacho_Freq = 1000U;
+    if (Hopper_Capacity == 0U)
+        Hopper_Capacity = 1000U;
+
+    if (AO1_Value > 6U)
+        AO1_Value = 3U;
+    if (AO2_Value > 6U)
+        AO2_Value = 3U;
+    if (AO3_Value > 6U)
+        AO3_Value = 0U;
+    if (AO_Nos > 2U)
+        AO_Nos = 0U;
+    if (AI_Nos > 2U)
+        AI_Nos = 0U;
+
+    if (Inv > 8U)
+        Inv = 0U;
+    if (Inv_1 > 8U)
+        Inv_1 = 0U;
+
+    if (AD_Conversion_Rate > 6U)
+        AD_Conversion_Rate = 3U;
+    if (Filter_Order > 4U)
+        Filter_Order = 0U;
+    if (LC_Filter > 8U)
+        LC_Filter = 2U;
+    if (Display_Filter > 5U)
+        Display_Filter = 0U;
+    if (Filter__Order > 4U)
+        Filter__Order = 3U;
+    if (LC__Filter > 8U)
+        LC__Filter = 2U;
+
+    if (SIO_Interface > 3U)
+        SIO_Interface = 0U;
+    if (SIO_Baud_Rate > 2U)
+        SIO_Baud_Rate = 0U;
+    if (SIO_Setup > 2U)
+        SIO_Setup = 0U;
+    if (DIO_Module > 2U)
+        DIO_Module = 0U;
+    if (Mode_Select > 1U)
+        Mode_Select = 0U;
+    if (Pulse1 > 2U)
+        Pulse1 = 0U;
+    if (Pulse_Width > 3U)
+        Pulse_Width = 3U;
+    if (Pulse2 > 1U)
+        Pulse2 = 0U;
+    if (Fixed_Frequency > 1U)
+        Fixed_Frequency = 1U;
+    if (Tacho_ip > 1U)
+        Tacho_ip = 0U;
+    if (Prefeeder > 1U)
+        Prefeeder = 0U;
+    if (Pre_Hopper > 1U)
+        Pre_Hopper = 0U;
+    if (PI > 1U)
+        PI = 0U;
+    if (Regulation > 1U)
+        Regulation = 0U;
+    if (Profibus_Baudrate > 9U)
+        Profibus_Baudrate = 6U;
+}
+
+/* msk 30-Oct-2026: loadcell / AI / AO calib values used as divisors in calc */
+void Parameter_fix_30_oct_26_2(void)
+{
+    if (Span_Count == 0UL)
+    {
+        full_load = 350000UL;
+        Span_Count = 300000UL;
+        zero_load = zero_count_cal = 50000UL;
+        calib_val[0] = full_load;
+        calib_val[1] = Span_Count;
+        calib_val[2] = zero_load;
+    }
+    if (Span_Count_ch2 == 0UL)
+    {
+        full_load_ch2 = 350000UL;
+        Span_Count_ch2 = 300000UL;
+        zero_load_ch2 = 50000UL;
+        calib_val[3] = full_load_ch2;
+        calib_val[4] = Span_Count_ch2;
+        calib_val[5] = zero_load_ch2;
+    }
+
+    if ((AO_calz1 >= AO_cals1) || (AO_cals1 > 4095U) || (AO_calz1 > 4095U))
+    {
+        AO_calz1 = 750U;
+        AO_cals1 = 3750U;
+    }
+    if ((AO_calz2 >= AO_cals2) || (AO_cals2 > 4095U) || (AO_calz2 > 4095U))
+    {
+        AO_calz2 = 750U;
+        AO_cals2 = 3750U;
+    }
+    if ((AO_calz3 >= AO_cals3) || (AO_cals3 > 4095U) || (AO_calz3 > 4095U))
+    {
+        AO_calz3 = 750U;
+        AO_cals3 = 3750U;
+    }
+    Min_Count_Channel1 = AO_calz1;
+    Max_Count_Channel1 = AO_cals1;
+    Min_Count_Channel2 = AO_calz2;
+    Max_Count_Channel2 = AO_cals2;
+    Min_Count_Channel3 = AO_calz3;
+    Max_Count_Channel3 = AO_cals3;
+    Dac1_SpanCounts = Max_Count_Channel1 - Min_Count_Channel1;
+    Dac2_SpanCounts = Max_Count_Channel2 - Min_Count_Channel2;
+    Dac3_SpanCounts = Max_Count_Channel3 - Min_Count_Channel3;
+
+    if ((AI_calb_val[0] >= AI_calb_val[1]) || (AI_calb_val[1] == 0U))
+    {
+        AI_calb_val[0] = Min_adc1_val = 750U;
+        AI_calb_val[1] = Max_adc1_val = 3750U;
+    }
+    if ((AI_calb_val[2] >= AI_calb_val[3]) || (AI_calb_val[3] == 0U))
+    {
+        AI_calb_val[2] = Min_adc2_val = 750U;
+        AI_calb_val[3] = Max_adc2_val = 3750U;
+    }
+    if ((AI_calb_val[4] >= AI_calb_val[5]) || (AI_calb_val[5] == 0U))
+    {
+        AI_calb_val[4] = Min_adc3_val = 750U;
+        AI_calb_val[5] = Max_adc3_val = 3750U;
+    }
+
+    if (Int_Time == 0U)
+        Int_Time = 1800U;
+    if (Prop_Gain > 10000U)
+        Prop_Gain = 700U;
+}
+
+/* msk 30-Oct-2026: DAC scale, module types, hopper Capacity_1 words */
+void Parameter_fix_30_oct_26_3(void)
+{
+    if ((Dac1_ScaleFactor < 5000U) || (Dac1_ScaleFactor > 20000U))
+        Dac1_ScaleFactor = 10000U;
+    if ((Dac2_ScaleFactor < 5000U) || (Dac2_ScaleFactor > 20000U))
+        Dac2_ScaleFactor = 10000U;
+    if ((Dac3_ScaleFactor < 5000U) || (Dac3_ScaleFactor > 20000U))
+        Dac3_ScaleFactor = 10000U;
+
+    if (AO_Type > 3U)
+        AO_Type = 2U;
+    if (AO_Module1_Type > 3U)
+        AO_Module1_Type = 2U;
+    if (AO_Module2_Type > 3U)
+        AO_Module2_Type = 3U;
+    if (AI_Type > 3U)
+        AI_Type = 0U;
+    if (DIO_Type > 3U)
+        DIO_Type = 0U;
+
+    /* keep legacy AO_Type aligned with Module1 after clamp */
+    AO_Type = AO_Module1_Type;
+
+    if (Capacity_1 == 0U)
+        Capacity_1 = Hopper_Capacity;
+    if (Capacity_1 == 0U)
+        Capacity_1 = 1000U;
+    New_menu_parameters[52] = ((uint16_t *)&Capacity_1)[1];
+    New_menu_parameters[84] = ((uint16_t *)&Capacity_1)[0];
+
+    if (Password > 9999U)
+        Password = 7870U;
 }
 
 //-----------------------------------------------
 void check_defaults(void)
 {
-    /* Called after loading defaults and saving to EEPROM; add any post-default init here. */
+    /* msk 30-Oct-26: re-run sanitize after EEPROM write path */
+    //Parameter_fix_30_oct_26_1();
+    //Parameter_fix_30_oct_26_2();
+    //Parameter_fix_30_oct_26_3();
 }
 
 //-----------------------------------------------
@@ -344,8 +556,7 @@ void Parameter_init_checkbit(void)
         cstrptr = "DEFAULT ..   ";
         Print_String(&cstrptr, line4, 0, font16, 0);
         Load_Wf_defaults();
-        Parameter_checkbit[0] = 0xCD;
-        eeprom_write_array(4000, (unsigned char*)Parameter_checkbit, 1);
+        /* msk 30-Oct-2026: write params/calib first; magic 0xCD only after they succeed */
         super_delay(30);
         eeprom_write_array(0, (unsigned char*)New_menu_parameters, 324);
         super_delay(30);
@@ -358,6 +569,9 @@ void Parameter_init_checkbit(void)
         save_par_eeprom();
         super_delay(30);
         check_defaults();
+        super_delay(30);
+        Parameter_checkbit[0] = 0xCD;
+        eeprom_write_array(4000, (unsigned char*)Parameter_checkbit, 1);
         super_delay(30);
         Default_Start_bit = FALSE;
         super_delay(40);
@@ -547,6 +761,7 @@ void main_initialize_routine(void)
     //DInt_Int_status = De_Interlock;
     //Auto_Man_status = STOP;
     Start_Stop_status = STOP;
+    Password = 7870; /* msk 30-Oct-2026: default menu password; DOWN exit returns 0 — must not match */
 
 //-------------------------------------New Control Logic-------------------------------------
     /*if(Mode_Select == Int)

@@ -49,7 +49,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>WF_MOD_18f</OutputName>
+          <OutputName>WF_MOD_50b</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
